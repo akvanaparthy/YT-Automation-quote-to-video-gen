@@ -9,14 +9,23 @@ const app = express();
 // Middleware
 app.use(cors({ origin: config.CORS_ORIGIN }));
 app.use(express.json());
-
-// Routes
-app.use('/api/videos', require('./src/routes/video.routes'));
-app.use('/api/upload', require('./src/routes/upload.routes'));
+app.use(express.urlencoded({ extended: true }));
 
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Server is running' });
+});
+
+// Routes
+app.use('/api', require('./src/routes/video.routes'));
+app.use('/api', require('./src/routes/upload.routes'));
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: 'Endpoint not found'
+  });
 });
 
 // Error handling middleware
@@ -32,4 +41,5 @@ const PORT = config.PORT;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
   console.log(`Environment: ${config.NODE_ENV}`);
+  console.log(`API available at http://localhost:${PORT}/api`);
 });

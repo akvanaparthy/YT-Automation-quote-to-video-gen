@@ -5,12 +5,19 @@
 
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 const config = require('../config/config');
+
+// Ensure upload directory exists
+const uploadDir = config.VIDEO_STORAGE_PATH;
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 // Storage configuration
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, config.VIDEO_STORAGE_PATH);
+    cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
     // Generate unique filename with timestamp
@@ -26,12 +33,10 @@ const fileFilter = (req, file, cb) => {
   const ext = path.extname(file.originalname).toLowerCase();
 
   if (!config.ALLOWED_FORMATS.includes(ext)) {
-    cb(new Error(`File format not allowed. Allowed formats: ${config.ALLOWED_FORMATS.join(', ')}`), false);
-  } else if (file.size > config.MAX_VIDEO_SIZE) {
-    cb(new Error(`File size exceeds limit of ${config.MAX_VIDEO_SIZE / 1024 / 1024}MB`), false);
-  } else {
-    cb(null, true);
+    return cb(new Error(`File format not allowed. Allowed formats: ${config.ALLOWED_FORMATS.join(', ')}`));
   }
+
+  cb(null, true);
 };
 
 module.exports = multer({
