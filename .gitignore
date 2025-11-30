@@ -45,10 +45,10 @@ lerna-debug.log*
 *.sublime-workspace
 
 # Generated files
-storage/output/*
-storage/videos/*
-!storage/output/.gitkeep
-!storage/videos/.gitkeep
+**/storage/output/*
+**/storage/videos/*
+!**/storage/output/.gitkeep
+!**/storage/videos/.gitkeep
 
 # Temporary files
 *.tmp
