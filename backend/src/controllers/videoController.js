@@ -115,3 +115,29 @@ exports.deleteVideo = async (req, res, next) => {
     next(err);
   }
 };
+
+// Get available fonts
+exports.getAvailableFonts = async (req, res, next) => {
+  try {
+    const fonts = textOverlay.getAvailableFonts();
+    res.json({
+      success: true,
+      fonts: fonts
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Get available animations
+exports.getAvailableAnimations = async (req, res, next) => {
+  try {
+    const animations = textOverlay.getAvailableAnimations();
+    res.json({
+      success: true,
+      animations: animations
+    });
+  } catch (err) {
+    next(err);
+  }
+};
