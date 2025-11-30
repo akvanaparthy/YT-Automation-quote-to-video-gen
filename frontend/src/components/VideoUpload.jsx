@@ -1,49 +1,58 @@
 /**
- * Video Upload Component
- * Allows users to upload new video files
+ * Video Selector Component
+ * Displays available videos from storage
  */
 
-import { useState } from 'react';
-import { uploadVideo } from '../services/api';
+import { useState, useEffect } from 'react';
+import { listVideos } from '../services/api';
 
-export default function VideoUpload({ onUploadSuccess }) {
-  const [loading, setLoading] = useState(false);
+export default function VideoSelector() {
+  const [videos, setVideos] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const handleFileChange = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  useEffect(() => {
+    loadVideos();
+  }, []);
 
-    setLoading(true);
-    setError(null);
-
+  const loadVideos = async () => {
     try {
-      const result = await uploadVideo(file);
-      if (result.success) {
-        setError(null);
-        onUploadSuccess?.(result);
-        e.target.value = ''; // Reset input
-      } else {
-        setError(result.error || 'Upload failed');
-      }
+      setLoading(true);
+      setError(null);
+      const result = await listVideos();
+      setVideos(result.videos || []);
     } catch (err) {
-      setError(err.message || 'Upload error');
+      setError(err.message || 'Failed to load videos');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="video-upload">
-      <h3>Upload Video</h3>
-      <input
-        type="file"
-        accept=".mp4,.mov"
-        onChange={handleFileChange}
-        disabled={loading}
-      />
-      {loading && <p>Uploading...</p>}
+    <div className="video-selector">
+      <h3>Available Videos</h3>
+      <p className="subtitle">A random video will be selected when you generate</p>
+
+      {loading && <p className="info">Loading videos...</p>}
       {error && <p className="error">{error}</p>}
+
+      {!loading && videos.length === 0 && (
+        <p className="info">No videos available</p>
+      )}
+
+      {!loading && videos.length > 0 && (
+        <div className="video-list">
+          {videos.map((video) => (
+            <div key={video.id || video.filename} className="video-item">
+              <div className="video-info">
+                <span className="video-name">{video.filename || video}</span>
+                {video.size && <span className="video-size">{video.size}</span>}
+              </div>
+            </div>
+          ))}
+          <p className="video-count">{videos.length} video{videos.length !== 1 ? 's' : ''} available</p>
+        </div>
+      )}
     </div>
   );
 }

@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import QuoteInput from './components/QuoteInput';
 import StyleCustomizer from './components/StyleCustomizer';
-import VideoUpload from './components/VideoUpload';
+import VideoSelector from './components/VideoUpload';
 import VideoPreview from './components/VideoPreview';
 import { generateVideo } from './services/api';
 import './App.css';
@@ -41,9 +41,6 @@ function App() {
     setStyle(newStyle);
   };
 
-  const handleUploadSuccess = () => {
-    // Refresh video list or update UI
-  };
 
   return (
     <div className="app">
@@ -62,7 +59,7 @@ function App() {
             </div>
 
             <div className="right-panel">
-              <VideoUpload onUploadSuccess={handleUploadSuccess} />
+              <VideoSelector />
               {generatedVideo && (
                 <VideoPreview video={generatedVideo} />
               )}

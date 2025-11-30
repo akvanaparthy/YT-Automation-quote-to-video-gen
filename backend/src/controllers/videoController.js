@@ -6,6 +6,7 @@
 const videoProcessor = require('../services/videoProcessor');
 const fileManager = require('../utils/fileManager');
 const randomSelector = require('../utils/randomSelector');
+const textOverlay = require('../services/textOverlay');
 
 // List all available source videos
 exports.listVideos = async (req, res, next) => {
@@ -23,7 +24,7 @@ exports.listVideos = async (req, res, next) => {
 // Generate video with quote overlay
 exports.generateVideo = async (req, res, next) => {
   try {
-    const { quote, style } = req.body;
+    const { quote, style, maxDuration, addMusic } = req.body;
 
     // Validation will be added in middleware
 
@@ -36,14 +37,35 @@ exports.generateVideo = async (req, res, next) => {
       });
     }
 
-    // Process video with quote overlay
-    const outputPath = await videoProcessor.processVideo(selectedVideo, quote, style);
+    // Select random music if requested
+    let selectedMusic = null;
+    if (addMusic !== false) {  // Default to true if not specified
+      selectedMusic = await randomSelector.selectRandomMusic();
+      if (!selectedMusic) {
+        console.log('No music files available, continuing without music');
+      }
+    }
+
+    // Process video with quote overlay, music, and duration
+    const outputPath = await videoProcessor.processVideo(
+      selectedVideo, 
+      quote, 
+      style,
+      selectedMusic,
+      maxDuration
+    );
+    
+    // Extract filename from path
+    const path = require('path');
+    const filename = path.basename(outputPath);
 
     res.json({
       success: true,
-      videoId: `gen_${Date.now()}`,
-      downloadUrl: `/api/download/gen_${Date.now()}.mp4`,
-      message: 'Video generated successfully'
+      videoId: filename,
+      downloadUrl: `/api/videos/download/${filename}`,
+      message: 'Video generated successfully',
+      hasMusic: !!selectedMusic,
+      duration: maxDuration || 'original'
     });
   } catch (err) {
     next(err);
@@ -54,8 +76,27 @@ exports.generateVideo = async (req, res, next) => {
 exports.downloadVideo = async (req, res, next) => {
   try {
     const { videoId } = req.params;
-    // Download logic to be implemented
-    res.json({ message: 'Download endpoint placeholder' });
+    const path = require('path');
+    const fs = require('fs');
+    
+    // Construct full path to generated video
+    const videoPath = path.join(process.cwd(), 'storage', 'output', videoId);
+    
+    // Check if file exists
+    if (!fs.existsSync(videoPath)) {
+      return res.status(404).json({
+        success: false,
+        error: 'Video not found'
+      });
+    }
+    
+    // Set appropriate headers
+    res.setHeader('Content-Type', 'video/mp4');
+    res.setHeader('Content-Disposition', `attachment; filename="${videoId}"`);
+    
+    // Stream the video file
+    const fileStream = fs.createReadStream(videoPath);
+    fileStream.pipe(res);
   } catch (err) {
     next(err);
   }

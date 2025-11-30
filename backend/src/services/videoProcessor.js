@@ -1,18 +1,31 @@
 /**
  * Video Processor
- * Handles FFmpeg video processing with text overlay
+ * Handles FFmpeg video processing with text overlay, music, and duration control
  */
 
 const ffmpeg = require('fluent-ffmpeg');
 const path = require('path');
 const fs = require('fs').promises;
+const fsSync = require('fs');
 const config = require('../config/config');
 const textOverlay = require('./textOverlay');
 
-// Process video with text overlay
-exports.processVideo = async (video, quote, style) => {
+// Ensure output directory exists
+if (!fsSync.existsSync(config.OUTPUT_PATH)) {
+  fsSync.mkdirSync(config.OUTPUT_PATH, { recursive: true });
+}
+
+// Process video with text overlay, music, and duration control
+exports.processVideo = async (video, quote, style, musicFile = null, maxDuration = null) => {
   return new Promise(async (resolve, reject) => {
     try {
+      // Get video information first
+      const videoInfo = await exports.getVideoInfo(video.path);
+      const videoDuration = videoInfo.duration;
+      
+      // Determine final duration
+      const finalDuration = maxDuration && maxDuration < videoDuration ? maxDuration : videoDuration;
+      
       // Prepare output filename
       const timestamp = Date.now();
       const outputFilename = `generated_${timestamp}.mp4`;
@@ -28,18 +41,62 @@ exports.processVideo = async (video, quote, style) => {
         animation: style?.animation || 'none'
       };
 
-      // Generate FFmpeg filter string
-      const filterString = textOverlay.generateFilterString(quote, finalStyle);
+      // Generate FFmpeg filter string with video duration for animations
+      const filterString = textOverlay.generateFilterString(quote, finalStyle, finalDuration);
 
-      // FFmpeg command
-      ffmpeg(video.path)
-        .output(outputPath)
-        .videoFilter(filterString)
+      console.log('Starting video processing...');
+      console.log('Input video:', video.path);
+      console.log('Video duration:', videoDuration, 'seconds');
+      console.log('Final duration:', finalDuration, 'seconds');
+      if (musicFile) {
+        console.log('Background music:', musicFile.path);
+      }
+      console.log('Output path:', outputPath);
+      console.log('Filter string:', filterString);
+
+      // Create FFmpeg command
+      const command = ffmpeg(video.path);
+
+      // Add music input if provided
+      if (musicFile) {
+        command.input(musicFile.path);
+      }
+
+      // Set duration limit
+      command.duration(finalDuration);
+
+      // Apply video filter for text overlay
+      command.videoFilter(filterString);
+
+      // Configure audio
+      if (musicFile) {
+        // Mix original audio with background music
+        command.complexFilter([
+          // Scale down music volume
+          '[1:a]volume=0.3[music]',
+          // Mix both audio streams
+          '[0:a][music]amix=inputs=2:duration=shortest[aout]'
+        ], 'aout');
+        command.outputOptions('-map', '0:v', '-map', '[aout]');
+      }
+
+      command
         .audioCodec('aac')
         .videoCodec('libx264')
-        .preset(config.FFMPEG_PRESET)
+        .outputOptions([
+          '-crf 23',  // Quality setting
+          '-movflags +faststart',  // Enable streaming
+          '-shortest'  // Stop at shortest stream
+        ])
+        .output(outputPath)
+        .on('start', (commandLine) => {
+          console.log('FFmpeg command:', commandLine);
+        })
+        .on('stderr', (stderrLine) => {
+          console.log('FFmpeg stderr:', stderrLine);
+        })
         .on('progress', (progress) => {
-          console.log(`Processing video: ${Math.round(progress.percent)}% done`);
+          console.log(`Processing: ${Math.round(progress.percent || 0)}% done`);
         })
         .on('end', () => {
           console.log(`Video processed successfully: ${outputPath}`);
@@ -70,10 +127,13 @@ exports.getVideoInfo = (videoPath) => {
       if (err) {
         reject(err);
       } else {
+        const videoStream = metadata.streams.find(s => s.codec_type === 'video');
+        const audioStream = metadata.streams.find(s => s.codec_type === 'audio');
         resolve({
           duration: metadata.format.duration,
-          resolution: `${metadata.streams[0].width}x${metadata.streams[0].height}`,
-          codec: metadata.streams[0].codec_name
+          resolution: `${videoStream.width}x${videoStream.height}`,
+          codec: videoStream.codec_name,
+          hasAudio: !!audioStream
         });
       }
     });
