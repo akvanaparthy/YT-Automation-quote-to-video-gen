@@ -27,11 +27,30 @@ body {
   padding: 2rem;
   text-align: center;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .app-header h1 {
   font-size: 2.5rem;
   margin: 0;
+}
+
+.history-toggle {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: background 0.3s;
+}
+
+.history-toggle:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .app-main {
@@ -139,6 +158,61 @@ body {
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 1rem;
+}
+
+.form-group input[type="checkbox"] {
+  margin-right: 8px;
+  cursor: pointer;
+}
+
+.form-group input[type="number"] {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+/* History Panel */
+.history-panel {
+  background: white;
+  border-radius: 8px;
+  padding: 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.history-panel h3 {
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.history-panel table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.history-panel th,
+.history-panel td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.history-panel th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: #333;
+}
+
+.history-panel tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.history-panel p {
+  color: #999;
+  text-align: center;
+  padding: 2rem;
 }
 
 /* Video Upload */

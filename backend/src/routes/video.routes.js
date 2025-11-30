@@ -12,6 +12,12 @@ router.get('/fonts', videoController.getAvailableFonts);
 // GET /api/animations - List available animations
 router.get('/animations', videoController.getAvailableAnimations);
 
+// GET /api/history - Get generation history
+router.get('/history', videoController.getHistory);
+
+// DELETE /api/history - Clear generation history
+router.delete('/history', videoController.clearHistory);
+
 // POST /api/videos/generate - Generate video with quote
 router.post('/videos/generate', validateGenerateRequest, videoController.generateVideo);
 

@@ -72,5 +72,13 @@ exports.validateGenerateRequest = (req, res, next) => {
     });
   }
 
+  // Validate autoDelete (optional, defaults to true)
+  if (addMusic !== undefined && typeof addMusic !== 'boolean') {
+    return res.status(400).json({
+      success: false,
+      error: 'autoDelete must be a boolean value'
+    });
+  }
+
   next();
 };

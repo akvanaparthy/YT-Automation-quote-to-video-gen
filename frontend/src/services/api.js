@@ -19,11 +19,38 @@ export const listVideos = async () => {
   return response.data;
 };
 
+// Get available fonts
+export const getAvailableFonts = async () => {
+  const response = await apiClient.get('/fonts');
+  return response.data;
+};
+
+// Get available animations
+export const getAvailableAnimations = async () => {
+  const response = await apiClient.get('/animations');
+  return response.data;
+};
+
+// Get generation history
+export const getHistory = async () => {
+  const response = await apiClient.get('/history');
+  return response.data;
+};
+
+// Clear generation history
+export const clearHistory = async () => {
+  const response = await apiClient.delete('/history');
+  return response.data;
+};
+
 // Generate video with quote
-export const generateVideo = async (quote, style) => {
+export const generateVideo = async (quote, style, options = {}) => {
   const response = await apiClient.post('/videos/generate', {
     quote,
-    style
+    style,
+    maxDuration: options.maxDuration,
+    addMusic: options.addMusic !== false,
+    autoDelete: options.autoDelete !== false
   });
   return response.data;
 };

@@ -7,6 +7,7 @@ module.exports = {
   VIDEO_STORAGE_PATH: './storage/videos',
   OUTPUT_PATH: './storage/output',
   FONTS_PATH: './src/assets/fonts',
+  HISTORY_PATH: './storage/history.json',
 
   // File Limits
   MAX_VIDEO_SIZE: 100 * 1024 * 1024, // 100MB

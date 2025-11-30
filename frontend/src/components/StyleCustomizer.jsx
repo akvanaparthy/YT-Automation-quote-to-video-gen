@@ -3,13 +3,14 @@
  * Allows users to customize text appearance
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getAvailableFonts, getAvailableAnimations } from '../services/api';
 
-const FONTS = ['Arial', 'Times New Roman', 'Courier New'];
 const POSITIONS = ['top', 'center', 'bottom'];
-const ANIMATIONS = ['none', 'fade', 'slide'];
 
 export default function StyleCustomizer({ onChange }) {
+  const [fonts, setFonts] = useState(['Arial']);
+  const [animations, setAnimations] = useState(['none']);
   const [style, setStyle] = useState({
     fontFamily: 'Arial',
     fontSize: 60,
@@ -18,11 +19,39 @@ export default function StyleCustomizer({ onChange }) {
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     animation: 'none'
   });
+  const [options, setOptions] = useState({
+    addMusic: true,
+    autoDelete: true,
+    maxDuration: null
+  });
+
+  useEffect(() => {
+    // Fetch available fonts and animations
+    const fetchOptions = async () => {
+      try {
+        const [fontsData, animationsData] = await Promise.all([
+          getAvailableFonts(),
+          getAvailableAnimations()
+        ]);
+        if (fontsData.success) setFonts(fontsData.fonts);
+        if (animationsData.success) setAnimations(animationsData.animations);
+      } catch (err) {
+        console.error('Error fetching options:', err);
+      }
+    };
+    fetchOptions();
+  }, []);
 
   const handleChange = (field, value) => {
     const newStyle = { ...style, [field]: value };
     setStyle(newStyle);
-    onChange(newStyle);
+    onChange(newStyle, options);
+  };
+
+  const handleOptionChange = (field, value) => {
+    const newOptions = { ...options, [field]: value };
+    setOptions(newOptions);
+    onChange(style, newOptions);
   };
 
   return (
@@ -36,7 +65,7 @@ export default function StyleCustomizer({ onChange }) {
           value={style.fontFamily}
           onChange={(e) => handleChange('fontFamily', e.target.value)}
         >
-          {FONTS.map(font => (
+          {fonts.map(font => (
             <option key={font} value={font}>{font}</option>
           ))}
         </select>
@@ -84,10 +113,49 @@ export default function StyleCustomizer({ onChange }) {
           value={style.animation}
           onChange={(e) => handleChange('animation', e.target.value)}
         >
-          {ANIMATIONS.map(anim => (
-            <option key={anim} value={anim}>{anim.charAt(0).toUpperCase() + anim.slice(1)}</option>
+          {animations.map(anim => (
+            <option key={anim} value={anim}>
+              {anim.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+            </option>
           ))}
         </select>
+      </div>
+
+      <h3>Video Options</h3>
+
+      <div className="form-group">
+        <label>
+          <input
+            type="checkbox"
+            checked={options.addMusic}
+            onChange={(e) => handleOptionChange('addMusic', e.target.checked)}
+          />
+          Add Background Music
+        </label>
+      </div>
+
+      <div className="form-group">
+        <label>
+          <input
+            type="checkbox"
+            checked={options.autoDelete}
+            onChange={(e) => handleOptionChange('autoDelete', e.target.checked)}
+          />
+          Auto-delete after 24 hours
+        </label>
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="maxDuration">Max Duration (seconds):</label>
+        <input
+          id="maxDuration"
+          type="number"
+          min="1"
+          max="300"
+          placeholder="Original length"
+          value={options.maxDuration || ''}
+          onChange={(e) => handleOptionChange('maxDuration', e.target.value ? parseInt(e.target.value) : null)}
+        />
       </div>
     </div>
   );

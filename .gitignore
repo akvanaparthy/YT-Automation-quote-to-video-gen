@@ -154,4 +154,4 @@ $RECYCLE.BIN/
 backend/storage/output/*
 backend/storage/videos/*
 backend/storage/music/*
-
+backend/storage/history.json

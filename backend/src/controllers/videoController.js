@@ -7,6 +7,8 @@ const videoProcessor = require('../services/videoProcessor');
 const fileManager = require('../utils/fileManager');
 const randomSelector = require('../utils/randomSelector');
 const textOverlay = require('../services/textOverlay');
+const historyManager = require('../utils/historyManager');
+const fs = require('fs').promises;
 
 // List all available source videos
 exports.listVideos = async (req, res, next) => {
@@ -24,7 +26,7 @@ exports.listVideos = async (req, res, next) => {
 // Generate video with quote overlay
 exports.generateVideo = async (req, res, next) => {
   try {
-    const { quote, style = {}, maxDuration, addMusic = true } = req.body;
+    const { quote, style = {}, maxDuration, addMusic = true, autoDelete = true } = req.body;
 
     // Apply defaults to style
     const config = require('../config/config');
@@ -68,13 +70,41 @@ exports.generateVideo = async (req, res, next) => {
     const path = require('path');
     const filename = path.basename(outputPath);
 
+    // Get video info for duration
+    const videoInfo = await videoProcessor.getVideoInfo(outputPath);
+    const finalDuration = Math.round(videoInfo.duration);
+
+    // Add to history
+    await historyManager.addHistoryEntry({
+      videoId: filename,
+      videoUsed: path.basename(selectedVideo.path),
+      musicUsed: selectedMusic ? path.basename(selectedMusic.path) : null,
+      duration: finalDuration,
+      autoDelete: autoDelete
+    });
+
+    // Schedule deletion if autoDelete is true
+    if (autoDelete === true) {
+      const ONE_DAY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+      setTimeout(async () => {
+        try {
+          await fs.unlink(outputPath);
+          console.log(`Auto-deleted video: ${filename}`);
+        } catch (err) {
+          console.error(`Failed to auto-delete video ${filename}:`, err);
+        }
+      }, ONE_DAY);
+    }
+
     res.json({
       success: true,
       videoId: filename,
       downloadUrl: `/api/videos/download/${filename}`,
       message: 'Video generated successfully',
       hasMusic: !!selectedMusic,
-      duration: maxDuration || 'original'
+      duration: finalDuration,
+      autoDelete: autoDelete,
+      expiresIn: autoDelete ? '24 hours' : 'never'
     });
   } catch (err) {
     next(err);
@@ -145,6 +175,33 @@ exports.getAvailableAnimations = async (req, res, next) => {
     res.json({
       success: true,
       animations: animations
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Get generation history
+exports.getHistory = async (req, res, next) => {
+  try {
+    const history = await historyManager.getHistory();
+    res.json({
+      success: true,
+      history: history,
+      total: history.length
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Clear generation history
+exports.clearHistory = async (req, res, next) => {
+  try {
+    await historyManager.clearHistory();
+    res.json({
+      success: true,
+      message: 'History cleared successfully'
     });
   } catch (err) {
     next(err);
