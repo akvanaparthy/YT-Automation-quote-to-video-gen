@@ -2,16 +2,22 @@
 node_modules/
 package-lock.json
 yarn.lock
+pnpm-lock.yaml
 
 # Build output
 dist/
 build/
 *.tsbuildinfo
+out/
+.next/
 
 # Environment variables
 .env
 .env.local
 .env.*.local
+.env.development
+.env.production
+.env.test
 
 # OS files
 .DS_Store
@@ -21,6 +27,7 @@ build/
 .Trashes
 ehthumbs.db
 Thumbs.db
+desktop.ini
 
 # Logs
 *.log
@@ -30,6 +37,8 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 .pnpm-debug.log*
+logs/
+*.log.*
 
 # Editor and IDE
 .vscode/
@@ -43,8 +52,13 @@ lerna-debug.log*
 .project
 .classpath
 *.sublime-workspace
+*.sublime-project
 
-# Generated files
+# Generated files - Storage directories
+backend/storage/output/*
+backend/storage/videos/*
+!backend/storage/output/.gitkeep
+!backend/storage/videos/.gitkeep
 **/storage/output/*
 **/storage/videos/*
 !**/storage/output/.gitkeep
@@ -56,6 +70,10 @@ lerna-debug.log*
 temp/
 .cache/
 .turbo/
+*.swp
+*.swo
+*.bak
+*.backup
 
 # OS specific
 Thumbs.db
@@ -67,10 +85,68 @@ settings.local.json
 
 # Vite
 .vite/
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
 
 # Node version managers
 .nvmrc
 .node-version
 
+# Docker
+.dockerignore
+Dockerfile
+docker-compose*.yml
+.docker/
+
 # Documentation
 docs/
+
+# Coverage and testing
+coverage/
+.nyc_output/
+*.lcov
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+
+# Production builds
+*.min.js
+*.min.css
+
+# Media files (uploaded/generated content)
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.webm
+*.flv
+!backend/storage/videos/.gitkeep
+!**/storage/videos/.gitkeep
+
+# Font files in assets (if generated)
+# backend/src/assets/fonts/*.ttf
+# backend/src/assets/fonts/*.otf
+# backend/src/assets/fonts/*.woff
+# backend/src/assets/fonts/*.woff2
+
+# MacOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
