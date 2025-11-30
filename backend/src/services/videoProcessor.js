@@ -31,18 +31,9 @@ exports.processVideo = async (video, quote, style, musicFile = null, maxDuration
       const outputFilename = `generated_${timestamp}.mp4`;
       const outputPath = path.join(config.OUTPUT_PATH, outputFilename);
 
-      // Merge default style with provided style
-      const finalStyle = {
-        fontFamily: style?.fontFamily || config.DEFAULT_FONT,
-        fontSize: style?.fontSize || config.DEFAULT_FONT_SIZE,
-        fontColor: style?.fontColor || config.DEFAULT_FONT_COLOR,
-        position: style?.position || config.DEFAULT_POSITION,
-        backgroundColor: style?.backgroundColor || null,
-        animation: style?.animation || 'none'
-      };
-
       // Generate FFmpeg filter string with video duration for animations
-      const filterString = textOverlay.generateFilterString(quote, finalStyle, finalDuration);
+      // Style already has defaults applied from controller
+      const filterString = textOverlay.generateFilterString(quote, style, finalDuration);
 
       console.log('Starting video processing...');
       console.log('Input video:', video.path);
@@ -65,19 +56,33 @@ exports.processVideo = async (video, quote, style, musicFile = null, maxDuration
       // Set duration limit
       command.duration(finalDuration);
 
-      // Apply video filter for text overlay
-      command.videoFilter(filterString);
-
-      // Configure audio
+      // Configure filters
       if (musicFile) {
-        // Mix original audio with background music
-        command.complexFilter([
-          // Scale down music volume
-          '[1:a]volume=0.3[music]',
-          // Mix both audio streams
-          '[0:a][music]amix=inputs=2:duration=shortest[aout]'
-        ], 'aout');
-        command.outputOptions('-map', '0:v', '-map', '[aout]');
+        // Use complex filter for both video text overlay and audio mixing
+        if (videoInfo.hasAudio) {
+          // Video has audio - mix it with background music
+          command.complexFilter([
+            // Apply text overlay to video
+            `[0:v]${filterString}[v]`,
+            // Scale down music volume
+            '[1:a]volume=0.3[music]',
+            // Mix both audio streams
+            '[0:a][music]amix=inputs=2:duration=shortest[a]'
+          ]);
+          command.outputOptions('-map', '[v]', '-map', '[a]');
+        } else {
+          // Video has no audio - just use background music
+          command.complexFilter([
+            // Apply text overlay to video
+            `[0:v]${filterString}[v]`,
+            // Use music as audio track
+            '[1:a]volume=0.3[a]'
+          ]);
+          command.outputOptions('-map', '[v]', '-map', '[a]');
+        }
+      } else {
+        // Just apply video filter for text overlay
+        command.videoFilter(filterString);
       }
 
       command

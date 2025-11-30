@@ -177,6 +177,15 @@ const getAnimationExpression = (animation, position, duration) => {
 
 // Get font path based on platform
 const getFontPath = (fontFile) => {
+  const customFontsPath = path.join(process.cwd(), 'storage', 'fonts', fontFile);
+  const fs = require('fs');
+  
+  // Check if custom font exists in storage/fonts
+  if (fs.existsSync(customFontsPath)) {
+    return customFontsPath;
+  }
+  
+  // Fall back to system fonts
   if (process.platform === 'win32') {
     return `C:\\Windows\\Fonts\\${fontFile}`;
   } else if (process.platform === 'darwin') {

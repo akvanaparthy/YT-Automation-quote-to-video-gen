@@ -5,9 +5,9 @@
 
 // Validate quote generation request
 exports.validateGenerateRequest = (req, res, next) => {
-  const { quote, style } = req.body;
+  const { quote, style, maxDuration, addMusic } = req.body;
 
-  // Validate quote
+  // Validate quote (MANDATORY)
   if (!quote) {
     return res.status(400).json({
       success: false,
@@ -29,7 +29,7 @@ exports.validateGenerateRequest = (req, res, next) => {
     });
   }
 
-  // Validate style (optional)
+  // Validate style (optional, defaults applied in controller)
   if (style) {
     if (style.fontSize && (typeof style.fontSize !== 'number' || style.fontSize < 10 || style.fontSize > 200)) {
       return res.status(400).json({
@@ -45,12 +45,31 @@ exports.validateGenerateRequest = (req, res, next) => {
       });
     }
 
-    if (style.animation && !['fade', 'slide', 'none'].includes(style.animation)) {
+    const validAnimations = ['none', 'fade-in', 'fade-out', 'slide-in-left', 'slide-in-right', 'slide-in-top', 'slide-in-bottom', 'zoom-in', 'bounce-in', 'pulse', 'shake', 'typewriter', 'rotate-in'];
+    if (style.animation && !validAnimations.includes(style.animation)) {
       return res.status(400).json({
         success: false,
-        error: 'Animation must be fade, slide, or none'
+        error: `Animation must be one of: ${validAnimations.join(', ')}`
       });
     }
+  }
+
+  // Validate maxDuration (optional)
+  if (maxDuration !== undefined && maxDuration !== null) {
+    if (typeof maxDuration !== 'number' || maxDuration <= 0 || maxDuration > 300) {
+      return res.status(400).json({
+        success: false,
+        error: 'maxDuration must be a positive number between 1 and 300 seconds'
+      });
+    }
+  }
+
+  // Validate addMusic (optional, defaults to true)
+  if (addMusic !== undefined && typeof addMusic !== 'boolean') {
+    return res.status(400).json({
+      success: false,
+      error: 'addMusic must be a boolean value'
+    });
   }
 
   next();

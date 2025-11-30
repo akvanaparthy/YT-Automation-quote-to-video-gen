@@ -35,7 +35,7 @@ exports.selectRandomVideo = async () => {
 // Select a random music from storage
 exports.selectRandomMusic = async () => {
   try {
-    const musicPath = path.join(process.cwd(), 'src', 'assets', 'music');
+    const musicPath = path.join(process.cwd(), 'storage', 'music');
     const allowedAudioFormats = ['.mp3', '.wav', '.aac', '.m4a'];
     
     // Check if music directory exists

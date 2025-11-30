@@ -24,9 +24,18 @@ exports.listVideos = async (req, res, next) => {
 // Generate video with quote overlay
 exports.generateVideo = async (req, res, next) => {
   try {
-    const { quote, style, maxDuration, addMusic } = req.body;
+    const { quote, style = {}, maxDuration, addMusic = true } = req.body;
 
-    // Validation will be added in middleware
+    // Apply defaults to style
+    const config = require('../config/config');
+    const finalStyle = {
+      fontFamily: style.fontFamily || config.DEFAULT_FONT,
+      fontSize: style.fontSize || config.DEFAULT_FONT_SIZE,
+      fontColor: style.fontColor || config.DEFAULT_FONT_COLOR,
+      position: style.position || config.DEFAULT_POSITION,
+      backgroundColor: style.backgroundColor || null,
+      animation: style.animation || 'none'
+    };
 
     // Select random video
     const selectedVideo = await randomSelector.selectRandomVideo();
@@ -39,7 +48,7 @@ exports.generateVideo = async (req, res, next) => {
 
     // Select random music if requested
     let selectedMusic = null;
-    if (addMusic !== false) {  // Default to true if not specified
+    if (addMusic === true) {
       selectedMusic = await randomSelector.selectRandomMusic();
       if (!selectedMusic) {
         console.log('No music files available, continuing without music');
@@ -50,7 +59,7 @@ exports.generateVideo = async (req, res, next) => {
     const outputPath = await videoProcessor.processVideo(
       selectedVideo, 
       quote, 
-      style,
+      finalStyle,
       selectedMusic,
       maxDuration
     );

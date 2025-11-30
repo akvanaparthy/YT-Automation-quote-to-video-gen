@@ -150,3 +150,8 @@ $RECYCLE.BIN/
 .directory
 .Trash-*
 .nfs*
+
+backend/storage/output/*
+backend/storage/videos/*
+backend/storage/music/*
+
