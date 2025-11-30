@@ -21,11 +21,15 @@ const FONT_MAP = {
 
 // Generate FFmpeg drawtext filter string with animations
 exports.generateFilterString = (quote, style, videoDuration) => {
+  // Wrap text to multiple lines if too long (adjust based on font size)
+  const charsPerLine = Math.floor(800 / (style.fontSize * 0.6)); // Approximate characters that fit
+  const wrappedQuote = wrapText(quote, charsPerLine);
+  
   // Escape quotes and special characters for FFmpeg
-  const escapedQuote = quote
+  // Note: Keep \n as-is for FFmpeg to interpret as line breaks
+  const escapedQuote = wrappedQuote
     .replace(/\\/g, '\\\\')
-    .replace(/'/g, "\\'")
-    .replace(/\n/g, '\\n');
+    .replace(/'/g, "\\'");
 
   // Calculate animation duration (half of video duration or 2 seconds if duration not provided)
   const animDuration = videoDuration ? videoDuration / 2 : 2;
@@ -39,6 +43,12 @@ exports.generateFilterString = (quote, style, videoDuration) => {
   filterStr += `:fontfile=${fontPath}`;
   filterStr += `:fontsize=${style.fontSize}`;
   filterStr += `:fontcolor=${style.fontColor}`;
+  
+  // Add line spacing for better readability with wrapped text
+  filterStr += `:line_spacing=10`;
+  
+  // Add border for better visibility
+  filterStr += `:borderw=2:bordercolor=black`;
 
   // Apply animation
   const { xPos, yPos, alpha } = getAnimationExpression(style.animation, style.position, animDuration);
@@ -60,6 +70,30 @@ exports.generateFilterString = (quote, style, videoDuration) => {
   filterStr += `:enable='between(t,0,${videoDuration || 999})'`;
 
   return filterStr;
+};
+
+// Wrap text to specified character width
+const wrapText = (text, maxCharsPerLine) => {
+  const words = text.split(' ');
+  const lines = [];
+  let currentLine = '';
+
+  for (const word of words) {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    
+    if (testLine.length > maxCharsPerLine && currentLine) {
+      lines.push(currentLine);
+      currentLine = word;
+    } else {
+      currentLine = testLine;
+    }
+  }
+  
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  return lines.join('\n');
 };
 
 // Get animation expressions for x, y, and alpha
