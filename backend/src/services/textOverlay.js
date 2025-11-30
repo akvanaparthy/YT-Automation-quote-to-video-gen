@@ -19,14 +19,35 @@ const FONT_MAP = {
   'Georgia': 'DejaVuSerif.ttf'
 };
 
+// Sanitize text to remove unsupported Unicode characters
+const sanitizeText = (text) => {
+  return text
+    // Replace smart/curly quotes with straight quotes
+    .replace(/['']/g, "'")
+    .replace(/[""]/g, '"')
+    // Replace em-dash and en-dash with regular hyphen
+    .replace(/[—–]/g, '-')
+    // Replace ellipsis character with three dots
+    .replace(/…/g, '...')
+    // Remove emojis and other high Unicode characters (keep basic ASCII + common punctuation)
+    .replace(/[^\x00-\x7F\u00A0-\u00FF]/g, '')
+    // Replace non-breaking space with regular space
+    .replace(/\u00A0/g, ' ')
+    // Clean up any double spaces
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
 // Generate FFmpeg drawtext filter string with animations
 exports.generateFilterString = (quote, style, videoDuration) => {
+  // Sanitize the quote text first
+  const sanitizedQuote = sanitizeText(quote);
+  
   // Wrap text to multiple lines if too long (adjust based on font size)
   const charsPerLine = Math.floor(800 / (style.fontSize * 0.6)); // Approximate characters that fit
-  const wrappedQuote = wrapText(quote, charsPerLine);
+  const wrappedQuote = wrapTextToLines(sanitizedQuote, charsPerLine).join('\n');
   
   // Escape quotes and special characters for FFmpeg
-  // Note: Keep \n as-is for FFmpeg to interpret as line breaks
   const escapedQuote = wrappedQuote
     .replace(/\\/g, '\\\\')
     .replace(/'/g, "\\'");
@@ -38,7 +59,7 @@ exports.generateFilterString = (quote, style, videoDuration) => {
   const fontFile = FONT_MAP[style.fontFamily] || 'DejaVuSans.ttf';
   const fontPath = getFontPath(fontFile);
 
-  // Build base drawtext filter
+  // Build base drawtext filter with text_align for center justification (FFmpeg 6.x+)
   let filterStr = `drawtext=text='${escapedQuote}'`;
   filterStr += `:fontfile=${fontPath}`;
   filterStr += `:fontsize=${style.fontSize}`;
@@ -47,13 +68,17 @@ exports.generateFilterString = (quote, style, videoDuration) => {
   // Add line spacing for better readability with wrapped text
   filterStr += `:line_spacing=10`;
   
+  // Center-align text (T=top, M=middle, B=bottom + L=left, C=center, R=right)
+  filterStr += `:text_align=T+C`;
+  
   // Add border for better visibility
   filterStr += `:borderw=2:bordercolor=black`;
 
   // Apply animation
   const { xPos, yPos, alpha } = getAnimationExpression(style.animation, style.position, animDuration);
   
-  filterStr += `:x=${xPos}`;
+  // Center the text block both horizontally and vertically
+  filterStr += `:x=(w-text_w)/2`;
   filterStr += `:y=${yPos}`;
   
   if (alpha) {
@@ -72,8 +97,8 @@ exports.generateFilterString = (quote, style, videoDuration) => {
   return filterStr;
 };
 
-// Wrap text to specified character width
-const wrapText = (text, maxCharsPerLine) => {
+// Wrap text to specified character width, returning array of lines
+const wrapTextToLines = (text, maxCharsPerLine) => {
   const words = text.split(' ');
   const lines = [];
   let currentLine = '';
@@ -93,7 +118,7 @@ const wrapText = (text, maxCharsPerLine) => {
     lines.push(currentLine);
   }
 
-  return lines.join('\n');
+  return lines;
 };
 
 // Get animation expressions for x, y, and alpha
