@@ -105,39 +105,55 @@ async function listDriveFiles(folderId) {
 }
 
 /**
- * Download file from Google Drive
+ * Download file from Google Drive using API
  */
 async function downloadDriveFile(fileId, fileName, destPath) {
-  const downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+  const apiKey = process.env.GOOGLE_DRIVE_API_KEY;
+  if (!apiKey) {
+    throw new Error('API key required for downloading files');
+  }
+  
+  const downloadUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${apiKey}`;
   const filePath = path.join(destPath, fileName);
+  
+  console.log(`  Downloading: ${fileName}...`);
   
   return new Promise((resolve, reject) => {
     https.get(downloadUrl, (res) => {
-      // Handle redirects for large files
-      if (res.statusCode === 302 || res.statusCode === 301) {
-        https.get(res.headers.location, (redirectRes) => {
-          const writeStream = fsSync.createWriteStream(filePath);
-          redirectRes.pipe(writeStream);
-          
-          writeStream.on('finish', () => {
-            writeStream.close();
-            resolve(filePath);
-          });
-          
-          writeStream.on('error', reject);
-        }).on('error', reject);
-      } else {
-        const writeStream = fsSync.createWriteStream(filePath);
-        res.pipe(writeStream);
+      // Check for successful response
+      if (res.statusCode !== 200) {
+        console.error(`  ✗ Download failed for ${fileName}: HTTP ${res.statusCode}`);
         
-        writeStream.on('finish', () => {
-          writeStream.close();
-          resolve(filePath);
+        // Read error response
+        let errorData = '';
+        res.on('data', chunk => errorData += chunk);
+        res.on('end', () => {
+          console.error(`  Error details: ${errorData}`);
+          reject(new Error(`HTTP ${res.statusCode}: ${errorData}`));
         });
-        
-        writeStream.on('error', reject);
+        return;
       }
-    }).on('error', reject);
+      
+      // Download successful, pipe to file
+      const writeStream = fsSync.createWriteStream(filePath);
+      res.pipe(writeStream);
+      
+      writeStream.on('finish', () => {
+        writeStream.close();
+        const stats = fsSync.statSync(filePath);
+        const sizeMB = (stats.size / (1024 * 1024)).toFixed(2);
+        console.log(`  ✓ Downloaded ${fileName} (${sizeMB} MB)`);
+        resolve(filePath);
+      });
+      
+      writeStream.on('error', (err) => {
+        console.error(`  ✗ Write error for ${fileName}:`, err.message);
+        reject(err);
+      });
+    }).on('error', (err) => {
+      console.error(`  ✗ Network error downloading ${fileName}:`, err.message);
+      reject(err);
+    });
   });
 }
 
@@ -181,16 +197,32 @@ async function syncFolder(folderId, localPath, folderType) {
     const localFiles = await getLocalFiles(localPath);
     console.log(`Found ${localFiles.length} files in local ${folderType} folder`);
     
-    // Download missing files from Drive
+    // Download missing or corrupted files from Drive
     for (const driveFile of driveFiles) {
+      const filePath = path.join(localPath, driveFile.name);
+      let needsDownload = false;
+      
       if (!localFiles.includes(driveFile.name)) {
+        needsDownload = true;
+      } else {
+        // Check if file is corrupted (0 bytes or very small)
         try {
-          console.log(`Downloading: ${driveFile.name}...`);
+          const stats = fsSync.statSync(filePath);
+          if (stats.size < 1024) { // Less than 1KB is likely corrupted
+            console.log(`  ⚠ ${driveFile.name} is corrupted (${stats.size} bytes), re-downloading...`);
+            needsDownload = true;
+          }
+        } catch (err) {
+          needsDownload = true;
+        }
+      }
+      
+      if (needsDownload) {
+        try {
           await downloadDriveFile(driveFile.id, driveFile.name, localPath);
           syncStats.downloaded.push(driveFile.name);
-          console.log(`✓ Downloaded: ${driveFile.name}`);
         } catch (err) {
-          console.error(`✗ Failed to download ${driveFile.name}:`, err.message);
+          console.error(`  ✗ Failed to download ${driveFile.name}:`, err.message);
           syncStats.errors.push({ file: driveFile.name, error: err.message });
         }
       } else {
