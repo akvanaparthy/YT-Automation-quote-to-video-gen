@@ -21,80 +21,114 @@ const FONT_MAP = {
 
 // Sanitize text to remove unsupported Unicode characters
 const sanitizeText = (text) => {
-  return text
+  let sanitized = text
     // Replace smart/curly quotes with straight quotes
-    .replace(/['']/g, "'")
-    .replace(/[""]/g, '"')
+    .replace(/[\u2018\u2019]/g, "'")  // ' '
+    .replace(/[\u201C\u201D]/g, '"')  // " "
     // Replace em-dash and en-dash with regular hyphen
-    .replace(/[—–]/g, '-')
+    .replace(/[\u2013\u2014]/g, '-')  // – —
     // Replace ellipsis character with three dots
-    .replace(/…/g, '...')
-    // Remove emojis and other high Unicode characters (keep basic ASCII + common punctuation)
-    .replace(/[^\x00-\x7F\u00A0-\u00FF]/g, '')
-    // Replace non-breaking space with regular space
-    .replace(/\u00A0/g, ' ')
+    .replace(/\u2026/g, '...')  // …
+    // Remove zero-width characters
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    // Replace ALL types of spaces with regular ASCII space
+    .replace(/[\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]/g, ' ')
+    // Remove emoji ranges and symbols (but keep basic ASCII and Latin-1)
+    .replace(/[\u{1F600}-\u{1F64F}]/gu, '') // Emoticons
+    .replace(/[\u{1F300}-\u{1F5FF}]/gu, '') // Misc Symbols and Pictographs
+    .replace(/[\u{1F680}-\u{1F6FF}]/gu, '') // Transport and Map
+    .replace(/[\u{1F700}-\u{1F77F}]/gu, '') // Alchemical Symbols
+    .replace(/[\u{1F780}-\u{1F7FF}]/gu, '') // Geometric Shapes Extended
+    .replace(/[\u{1F800}-\u{1F8FF}]/gu, '') // Supplemental Arrows-C
+    .replace(/[\u{1F900}-\u{1F9FF}]/gu, '') // Supplemental Symbols and Pictographs
+    .replace(/[\u{1FA00}-\u{1FA6F}]/gu, '') // Chess Symbols
+    .replace(/[\u{1FA70}-\u{1FAFF}]/gu, '') // Symbols and Pictographs Extended-A
+    .replace(/[\u{2600}-\u{26FF}]/gu, '')   // Misc symbols
+    .replace(/[\u{2700}-\u{27BF}]/gu, '')   // Dingbats
+    // Remove any character that's not basic printable ASCII (32-126) or common Latin-1 (160-255)
+    // This is aggressive but ensures only supported characters remain
+    .replace(/[^\x20-\x7E\xA0-\xFF]/g, '')
     // Clean up any double spaces
     .replace(/\s+/g, ' ')
     .trim();
+  
+  console.log('Text after aggressive sanitization:', sanitized);
+  console.log('Chars:', Array.from(sanitized).map(c => `${c}(${c.charCodeAt(0)})`).join(' '));
+  
+  return sanitized;
 };
 
 // Generate FFmpeg drawtext filter string with animations
 exports.generateFilterString = (quote, style, videoDuration) => {
+  console.log('=== TEXT OVERLAY DEBUG ===');
+  console.log('Original quote:', quote);
+  
   // Sanitize the quote text first
   const sanitizedQuote = sanitizeText(quote);
+  console.log('Sanitized quote:', sanitizedQuote);
   
-  // Wrap text to multiple lines if too long (adjust based on font size)
-  const charsPerLine = Math.floor(800 / (style.fontSize * 0.6)); // Approximate characters that fit
-  const wrappedQuote = wrapTextToLines(sanitizedQuote, charsPerLine).join('\n');
+  // Split into words and create multiple drawtext filters
+  // This avoids the newline/glyph issue entirely
+  const words = sanitizedQuote.split(' ');
+  const maxWordsPerLine = 4;  // Adjust based on font size
+  const lines = [];
   
-  // Escape quotes and special characters for FFmpeg
-  const escapedQuote = wrappedQuote
-    .replace(/\\/g, '\\\\')
-    .replace(/'/g, "\\'");
-
-  // Calculate animation duration (half of video duration or 2 seconds if duration not provided)
-  const animDuration = videoDuration ? videoDuration / 2 : 2;
+  for (let i = 0; i < words.length; i += maxWordsPerLine) {
+    lines.push(words.slice(i, i + maxWordsPerLine).join(' '));
+  }
+  
+  console.log('Split into lines:', lines);
   
   // Font settings
   const fontFile = FONT_MAP[style.fontFamily] || 'DejaVuSans.ttf';
   const fontPath = getFontPath(fontFile);
-
-  // Build base drawtext filter with text_align for center justification (FFmpeg 6.x+)
-  let filterStr = `drawtext=text='${escapedQuote}'`;
-  filterStr += `:fontfile=${fontPath}`;
-  filterStr += `:fontsize=${style.fontSize}`;
-  filterStr += `:fontcolor=${style.fontColor}`;
   
-  // Add line spacing for better readability with wrapped text
-  filterStr += `:line_spacing=10`;
+  // Calculate animation duration
+  const animDuration = videoDuration ? videoDuration / 2 : 2;
   
-  // Center-align text (T=top, M=middle, B=bottom + L=left, C=center, R=right)
-  filterStr += `:text_align=T+C`;
-  
-  // Add border for better visibility
-  filterStr += `:borderw=2:bordercolor=black`;
-
-  // Apply animation
+  // Base Y position
   const { xPos, yPos, alpha } = getAnimationExpression(style.animation, style.position, animDuration);
   
-  // Center the text block both horizontally and vertically
-  filterStr += `:x=(w-text_w)/2`;
-  filterStr += `:y=${yPos}`;
+  // Create multiple drawtext filters, one per line
+  const lineHeight = style.fontSize + 10;
+  const totalHeight = lines.length * lineHeight;
+  const startY = style.position === 'top' ? 50 : 
+                 style.position === 'bottom' ? `h-${totalHeight}-50` :
+                 `(h-${totalHeight})/2`;
   
-  if (alpha) {
-    filterStr += `:alpha='${alpha}'`;
-  }
-
-  // Background box for readability
-  if (style.backgroundColor) {
-    const boxColor = convertColorToFFmpegFormat(style.backgroundColor);
-    filterStr += `:box=1:boxcolor=${boxColor}:boxborderw=10`;
-  }
-
-  // Enable text
-  filterStr += `:enable='between(t,0,${videoDuration || 999})'`;
-
-  return filterStr;
+  const filters = lines.map((line, index) => {
+    const escapedLine = line
+      .replace(/\\/g, '\\\\\\\\')
+      .replace(/'/g, "'\\\\''")
+      .replace(/:/g, '\\:');
+    
+    let filterStr = `drawtext=text='${escapedLine}'`;
+    filterStr += `:fontfile=${fontPath}`;
+    filterStr += `:fontsize=${style.fontSize}`;
+    filterStr += `:fontcolor=${style.fontColor}`;
+    filterStr += `:line_spacing=10`;
+    filterStr += `:borderw=3:bordercolor=black@0.8`;
+    filterStr += `:x=(w-text_w)/2`;
+    filterStr += `:y=${startY}+${index * lineHeight}`;
+    
+    if (alpha) {
+      filterStr += `:alpha='${alpha}'`;
+    }
+    
+    if (style.backgroundColor) {
+      const boxColor = convertColorToFFmpegFormat(style.backgroundColor);
+      filterStr += `:box=1:boxcolor=${boxColor}:boxborderw=10`;
+    }
+    
+    filterStr += `:enable='between(t,0,${videoDuration || 999})'`;
+    
+    return filterStr;
+  });
+  
+  console.log('Generated filters:', filters);
+  
+  // Return comma-separated filters
+  return filters.join(',');
 };
 
 // Wrap text to specified character width, returning array of lines
@@ -107,7 +141,7 @@ const wrapTextToLines = (text, maxCharsPerLine) => {
     const testLine = currentLine ? `${currentLine} ${word}` : word;
     
     if (testLine.length > maxCharsPerLine && currentLine) {
-      lines.push(currentLine);
+      lines.push(currentLine.trim());  // Trim to remove trailing spaces
       currentLine = word;
     } else {
       currentLine = testLine;
@@ -115,8 +149,13 @@ const wrapTextToLines = (text, maxCharsPerLine) => {
   }
   
   if (currentLine) {
-    lines.push(currentLine);
+    lines.push(currentLine.trim());  // Trim to remove trailing spaces
   }
+
+  console.log('Wrapped lines:', lines);
+  console.log('Lines with char codes:', lines.map(line => 
+    Array.from(line).map(c => `${c}(${c.charCodeAt(0)})`).join(' ')
+  ));
 
   return lines;
 };

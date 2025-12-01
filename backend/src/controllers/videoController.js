@@ -3,7 +3,7 @@
  * Handles video generation, listing, downloading, and deletion
  */
 
-const videoProcessor = require('../services/videoProcessor');
+const videoProcessor = require('../services/videoProcessorRemotion');  // Changed to Remotion
 const fileManager = require('../utils/fileManager');
 const randomSelector = require('../utils/randomSelector');
 const textOverlay = require('../services/textOverlay');
