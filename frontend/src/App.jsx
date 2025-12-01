@@ -89,9 +89,6 @@ function App() {
         <div className="container">
           {error && <div className="error-banner">{error}</div>}
 
-          {/* Drive Sync Panel */}
-          <SyncPanel />
-
           {showHistory && (
             <div className="history-panel">
               <h3>Generation History</h3>
@@ -127,14 +124,18 @@ function App() {
           <div className="content-grid">
             <div className="left-panel">
               <QuoteInput onSubmit={handleQuoteSubmit} />
-              <StyleCustomizer onChange={handleStyleChange} />
             </div>
 
-            <div className="right-panel">
+            <div className="middle-panel">
+              <SyncPanel />
               <VideoSelector />
               {generatedVideo && (
                 <VideoPreview video={generatedVideo} />
               )}
+            </div>
+
+            <div className="right-panel">
+              <StyleCustomizer onChange={handleStyleChange} />
             </div>
           </div>
         </div>

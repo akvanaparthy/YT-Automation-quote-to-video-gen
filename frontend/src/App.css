@@ -74,12 +74,13 @@ body {
 
 .content-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1.5rem;
   margin-top: 2rem;
 }
 
 .left-panel,
+.middle-panel,
 .right-panel {
   background: white;
   border-radius: 8px;
