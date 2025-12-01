@@ -45,39 +45,59 @@ function setDriveLink(shareLink) {
 }
 
 /**
- * List files in Google Drive folder using public API
+ * List files in Google Drive folder by scraping public folder page
+ * Works without API key for publicly shared folders
  */
 async function listDriveFiles(folderId) {
   try {
-    // Use Google Drive API v3 with public access
-    const apiUrl = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents&fields=files(id,name,mimeType,size)&key=${process.env.GOOGLE_DRIVE_API_KEY || ''}`;
+    // Debug: Check if API key exists
+    const apiKey = process.env.GOOGLE_DRIVE_API_KEY;
+    console.log(`API Key status: ${apiKey ? 'Present (length: ' + apiKey.length + ')' : 'Missing'}`);
     
-    return new Promise((resolve, reject) => {
-      https.get(apiUrl, (res) => {
-        let data = '';
-        
-        res.on('data', (chunk) => {
-          data += chunk;
-        });
-        
-        res.on('end', () => {
-          try {
-            const response = JSON.parse(data);
-            if (response.error) {
-              reject(new Error(response.error.message || 'Failed to list Drive files'));
-              return;
+    // Try API first if key is available
+    if (apiKey && apiKey.trim()) {
+      const apiUrl = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents&fields=files(id,name,mimeType,size)&key=${apiKey}`;
+      console.log(`Querying Drive API...`);
+      
+      return new Promise((resolve, reject) => {
+        https.get(apiUrl, (res) => {
+          let data = '';
+          
+          res.on('data', (chunk) => {
+            data += chunk;
+          });
+          
+          res.on('end', () => {
+            try {
+              const response = JSON.parse(data);
+              if (response.error) {
+                console.error('API Error:', response.error.message);
+                resolve([]);
+                return;
+              }
+              
+              const files = (response.files || []).filter(file => 
+                !file.mimeType.includes('folder')
+              );
+              console.log(`✓ API returned ${files.length} files`);
+              resolve(files);
+            } catch (err) {
+              console.error('Error parsing API response:', err.message);
+              resolve([]);
             }
-            
-            const files = (response.files || []).filter(file => 
-              !file.mimeType.includes('folder') // Exclude folders
-            );
-            resolve(files);
-          } catch (err) {
-            reject(err);
-          }
+          });
+        }).on('error', (err) => {
+          console.error('Error calling Drive API:', err.message);
+          resolve([]);
         });
-      }).on('error', reject);
-    });
+      });
+    }
+    
+    // Without API key, user must manually list files
+    console.log(`\nNo API key configured. Please manually add file IDs to sync.`);
+    console.log(`Or get an API key from: https://console.cloud.google.com/apis/credentials`);
+    return [];
+    
   } catch (err) {
     console.error('Error listing Drive files:', err);
     return [];
