@@ -39,7 +39,6 @@ exports.listVideos = async () => {
           id: file,
           filename: file,
           size: `${sizeInMB}MB`,
-          duration: '0s', // To be implemented with FFmpeg probe
           resolution: '1080x1920'
         });
       }

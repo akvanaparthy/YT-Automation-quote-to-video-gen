@@ -1,13 +1,13 @@
 {
   "name": "quote-video-generator-backend",
   "version": "1.0.0",
-  "description": "Backend API for quote-to-video generation",
+  "description": "Backend API for quote-to-video generation using Remotion",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
-  "keywords": ["video", "ffmpeg", "api", "quotes"],
+  "keywords": ["video", "remotion", "api", "quotes"],
   "author": "",
   "license": "MIT",
   "dependencies": {

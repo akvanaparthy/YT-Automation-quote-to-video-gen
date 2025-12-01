@@ -19,11 +19,6 @@ module.exports = {
   DEFAULT_FONT_COLOR: '#FFFFFF',
   DEFAULT_POSITION: 'center',
 
-  // FFmpeg
-  FFMPEG_PRESET: 'medium', // ultrafast, superfast, veryfast, faster, fast, medium, slow
-  VIDEO_BITRATE: '5000k',
-  VIDEO_RESOLUTION: '1080x1920',
-
   // Cleanup
   OUTPUT_CLEANUP_ENABLED: true,
   OUTPUT_CLEANUP_TIME: 3600000, // 1 hour in ms
