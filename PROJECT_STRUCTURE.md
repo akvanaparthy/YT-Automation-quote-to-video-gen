@@ -6,7 +6,7 @@ A web application that generates short-form videos with quote overlays suitable 
 
 **Core Workflow:**
 ```
-User sends quote → Backend selects random video → FFmpeg adds text overlay → Returns processed video
+User sends quote → Backend selects random video → Remotion renders text overlay → Returns processed video
 ```
 
 ---
@@ -14,9 +14,10 @@ User sends quote → Backend selects random video → FFmpeg adds text overlay �
 ## Technology Stack
 
 ### Backend
-- **Runtime:** Node.js
+- **Runtime:** Node.js v20
 - **Framework:** Express.js
-- **Video Processing:** FFmpeg (via fluent-ffmpeg)
+- **Video Processing:** Remotion (React-based rendering)
+- **Metadata Extraction:** FFmpeg (ffprobe only)
 - **File Upload:** Multer
 - **CORS:** cors package
 - **Environment:** dotenv
@@ -49,9 +50,8 @@ quote-video-generator/
 │   │   │   └── uploadController.js      # File upload handling
 │   │   │
 │   │   ├── services/
-│   │   │   ├── videoProcessor.js        # FFmpeg integration & video processing
-│   │   │   ├── textOverlay.js           # Text styling, positioning, animation logic
-│   │   │   └── fileManager.js           # File operations (read, delete, list)
+│   │   │   ├── videoProcessorRemotion.js # Remotion-based video rendering
+│   │   │   └── fileManager.js            # File operations (read, delete, list)
 │   │   │
 │   │   ├── middleware/
 │   │   │   ├── validation.js            # Request validation (quote, style params)
@@ -264,47 +264,37 @@ Remove a source video from storage.
 1. VALIDATE REQUEST
    └─ Check quote length and style parameters
 
-2. SELECT VIDEO
-   └─ Randomly pick from storage/videos/
+2. SELECT VIDEO & MUSIC
+   └─ Randomly pick from storage/videos/ and storage/music/
 
-3. CHECK FORMAT
-   └─ Verify 9:16 aspect ratio (1080x1920)
-   └─ Convert if necessary
+3. GET VIDEO METADATA
+   └─ Use ffprobe to get duration and resolution
 
-4. PREPARE TEXT OVERLAY
-   └─ Generate text with chosen font/color
-   └─ Calculate positioning
-   └─ Create drawtext filter string
+4. COPY FILES TO REMOTION PUBLIC
+   └─ Temporary copy for Remotion access
 
-5. PROCESS WITH FFMPEG
-   └─ Load source video
-   └─ Apply drawtext filter
-   └─ Apply animation (fade/slide if specified)
-   └─ Render to output file
+5. RENDER WITH REMOTION
+   └─ Bundle React components
+   └─ Render video with Chromium browser
+   └─ Apply text overlay with animations
+   └─ Composite video, text, and music
 
 6. STORE & RETURN
    └─ Save to storage/output/
    └─ Return download URL to client
+   └─ Clean up temporary files
 
 7. CLEANUP (Optional)
    └─ Schedule deletion after 1 hour
 ```
 
-### FFmpeg Command Example
+### Remotion Rendering
 
-```bash
-ffmpeg -i input.mp4 \
-  -vf "drawtext=\
-    textfile=quote.txt:\
-    fontfile=/path/to/font.ttf:\
-    fontsize=60:\
-    fontcolor=white:\
-    x=(w-text_w)/2:\
-    y=(h-text_h)/2:\
-    box=1:boxcolor=black@0.5:boxborderw=10" \
-  -codec:a copy \
-  output.mp4
-```
+Remotion uses React components to define video compositions, then renders them using a headless Chromium browser. This provides:
+- Browser-quality text rendering (no font glyph issues)
+- CSS-based animations and styling
+- Full Unicode support
+- Easy to customize and extend
 
 ---
 
@@ -326,16 +316,25 @@ ffmpeg -i input.mp4 \
 ### Text Overlay Options
 
 **Position:**
-- `top` - Text at top (with padding)
+- `top` - Text at top (10% from edge)
 - `center` - Vertically centered
-- `bottom` - At bottom (with padding)
+- `bottom` - At bottom (10% from edge)
 
 **Style Options:**
-- `fontFamily` - Font name (must be installed or in fonts folder)
+- `fontFamily` - CSS font family (default: Arial)
 - `fontSize` - Size in pixels (default: 60)
-- `fontColor` - Hex color or RGB (default: #FFFFFF)
-- `backgroundColor` - Hex/RGBA for text background
-- `animation` - `fade`, `slide`, or `none`
+- `fontColor` - CSS color value (default: #FFFFFF)
+- `backgroundColor` - CSS background with opacity (default: rgba(0, 0, 0, 0.5))
+- `animation` - `fade-in`, `slide-in-left`, `slide-in-right`, `zoom-in`, `bounce-in`, or `none`
+
+**Supported Animations:**
+- `fade-in` - Gradual opacity increase
+- `fade-out` - Gradual opacity decrease
+- `slide-in-left` - Slide from left edge
+- `slide-in-right` - Slide from right edge
+- `zoom-in` - Scale from 0 to 1
+- `bounce-in` - Spring animation with bounce
+- `none` - No animation
 
 ---
 
@@ -385,49 +384,49 @@ Create `backend/.env`:
 PORT=5000
 NODE_ENV=development
 CORS_ORIGIN=http://localhost:3000
-FFMPEG_PATH=
 ```
 
 ---
 
 ## Development Phases
 
-### Phase 1: Backend Core (FIRST PRIORITY)
-- [ ] Initialize Node.js project with Express
-- [ ] Install FFmpeg and fluent-ffmpeg
-- [ ] Create folder structure
-- [ ] Setup configuration system
-- [ ] Implement videoProcessor service
-  - [ ] Basic FFmpeg integration
-  - [ ] Text overlay capability
-- [ ] Create video generation endpoint (`/api/generate`)
-- [ ] Implement random video selection
-- [ ] Test with sample videos and quotes
+### Phase 1: Backend Core (COMPLETED)
+- [x] Initialize Node.js project with Express
+- [x] Install Remotion and dependencies
+- [x] Create folder structure
+- [x] Setup configuration system
+- [x] Implement videoProcessorRemotion service
+  - [x] Remotion bundling and rendering
+  - [x] Text overlay with React components
+- [x] Create video generation endpoint (`/api/generate`)
+- [x] Implement random video and music selection
+- [x] Test with sample videos and quotes
 
-### Phase 2: File Management
-- [ ] Create `/api/upload` endpoint
-- [ ] Implement multer configuration
-- [ ] Create `/api/videos` listing endpoint
-- [ ] Add `/api/videos/:filename` delete endpoint
-- [ ] File validation (format, size, resolution)
-- [ ] Error handling for invalid files
+### Phase 2: File Management (COMPLETED)
+- [x] Create `/api/upload` endpoint
+- [x] Implement multer configuration
+- [x] Create `/api/videos` listing endpoint
+- [x] Add `/api/videos/:filename` delete endpoint
+- [x] File validation (format, size)
+- [x] Error handling for invalid files
 
-### Phase 3: Text Styling & Features
-- [ ] Support custom fonts
-- [ ] Implement color customization
-- [ ] Add positioning options (top/center/bottom)
-- [ ] Background box for text readability
-- [ ] Text animation effects (fade, slide)
-- [ ] Handle long quotes (text wrapping)
+### Phase 3: Text Styling & Features (COMPLETED)
+- [x] Support custom fonts (via CSS)
+- [x] Implement color customization
+- [x] Add positioning options (top/center/bottom)
+- [x] Background box for text readability
+- [x] Text animation effects (fade-in, slide, zoom, bounce)
+- [x] Handle long quotes (automatic text wrapping)
+- [x] Background music integration
 
-### Phase 4: Frontend Interface
-- [ ] Setup React project
-- [ ] Create QuoteInput component
-- [ ] Create StyleCustomizer component
-- [ ] Create VideoUpload component
-- [ ] Create VideoPreview component
-- [ ] Integrate with API
-- [ ] Add loading states & error handling
+### Phase 4: Frontend Interface (IN PROGRESS)
+- [x] Setup React project
+- [x] Create QuoteInput component
+- [x] Create StyleCustomizer component
+- [x] Create VideoUpload component
+- [x] Create VideoPreview component
+- [x] Integrate with API
+- [x] Add loading states & error handling
 
 ### Phase 5: Optimization & Polish
 - [ ] Video format validation & conversion

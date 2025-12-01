@@ -99,6 +99,10 @@ exports.processVideo = async (video, quote, style, musicFile = null, maxDuration
       codec: 'h264',
       outputLocation: path.resolve(outputPath),
       inputProps,
+      concurrency: 4, // Parallel rendering
+      frameRange: [0, durationInFrames - 1], // 0-indexed, so last frame is durationInFrames - 1
+      everyNthFrame: 1,
+      numberOfGifLoops: null,
       onProgress: ({ progress, renderedFrames, encodedFrames }) => {
         if (renderedFrames % 30 === 0) {
           console.log(`Rendering: ${(progress * 100).toFixed(1)}% (${renderedFrames}/${durationInFrames} frames)`);

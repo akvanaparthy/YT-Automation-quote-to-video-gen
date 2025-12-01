@@ -5,8 +5,8 @@ A web application that generates short-form videos with quote overlays suitable 
 ## Quick Start
 
 ### Prerequisites
-- Node.js (v16 or higher)
-- FFmpeg installed on your system
+- Node.js (v20 or higher)
+- Docker (for containerized deployment)
 
 ### Backend Setup
 
@@ -42,8 +42,9 @@ See [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) for the complete project stru
 
 ## Tech Stack
 
-- **Backend:** Node.js + Express.js + FFmpeg
+- **Backend:** Node.js + Express.js + Remotion
 - **Frontend:** React + Vite
+- **Video Rendering:** Remotion (React-based)
 - **Storage:** Local file system
 
 ## Features
@@ -53,16 +54,10 @@ See [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) for the complete project stru
 - Upload and manage video files
 - Support for 9:16 aspect ratio (Shorts/Reels format)
 
-## Documentation
-
-- [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) - Complete project structure and planning
-- [docs/API_REFERENCE.md](./docs/API_REFERENCE.md) - Detailed API documentation
-- [docs/DEVELOPMENT_GUIDE.md](./docs/DEVELOPMENT_GUIDE.md) - Setup and development instructions
-
 ## Development Phases
 
-**Phase 1 (In Progress):** Backend core functionality
-- FFmpeg integration
+**Phase 1 (Completed):** Backend core functionality
+- Remotion integration
 - Video processing with text overlay
 - API endpoints
 
@@ -82,13 +77,11 @@ See [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) for the complete project stru
 
 ## Next Steps
 
-1. Install backend dependencies
-2. Install FFmpeg on your system
-3. Create `backend/.env` from `.env.example`
-4. Start backend server
-5. Start frontend development server
-6. Upload test videos
-7. Test video generation
+1. Install Docker
+2. Run `docker-compose up --build`
+3. Access frontend at http://localhost:3000
+4. Upload test videos
+5. Test video generation
 
 ## License
 

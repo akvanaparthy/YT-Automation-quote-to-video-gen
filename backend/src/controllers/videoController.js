@@ -6,7 +6,6 @@
 const videoProcessor = require('../services/videoProcessorRemotion');  // Changed to Remotion
 const fileManager = require('../utils/fileManager');
 const randomSelector = require('../utils/randomSelector');
-const textOverlay = require('../services/textOverlay');
 const historyManager = require('../utils/historyManager');
 const fs = require('fs').promises;
 
@@ -182,7 +181,19 @@ exports.deleteVideo = async (req, res, next) => {
 // Get available fonts
 exports.getAvailableFonts = async (req, res, next) => {
   try {
-    const fonts = textOverlay.getAvailableFonts();
+    // Standard web-safe fonts
+    const fonts = [
+      'Arial',
+      'Helvetica',
+      'Times New Roman',
+      'Georgia',
+      'Courier New',
+      'Verdana',
+      'Comic Sans MS',
+      'Impact',
+      'Trebuchet MS',
+      'Arial Black'
+    ];
     res.json({
       success: true,
       fonts: fonts
@@ -195,7 +206,15 @@ exports.getAvailableFonts = async (req, res, next) => {
 // Get available animations
 exports.getAvailableAnimations = async (req, res, next) => {
   try {
-    const animations = textOverlay.getAvailableAnimations();
+    const animations = [
+      'none',
+      'fade-in',
+      'fade-out',
+      'slide-in-left',
+      'slide-in-right',
+      'zoom-in',
+      'bounce-in'
+    ];
     res.json({
       success: true,
       animations: animations
