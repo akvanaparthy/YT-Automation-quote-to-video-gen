@@ -18,7 +18,7 @@ if (!fsSync.existsSync(config.OUTPUT_PATH)) {
   fsSync.mkdirSync(config.OUTPUT_PATH, { recursive: true });
 }
 
-exports.processVideo = async (video, quote, style, musicFile = null, maxDuration = null) => {
+exports.processVideo = async (video, quote, subtitle, style, subtitleStyle, musicFile = null, maxDuration = null) => {
   try {
     // Prepare output filename
     const timestamp = Date.now();
@@ -28,6 +28,7 @@ exports.processVideo = async (video, quote, style, musicFile = null, maxDuration
     console.log('Starting Remotion video processing...');
     console.log('Input video:', video.path);
     console.log('Quote:', quote);
+    if (subtitle) console.log('Subtitle:', subtitle);
     console.log('Output path:', outputPath);
 
     // Create public directory in remotion if it doesn't exist
@@ -59,9 +60,11 @@ exports.processVideo = async (video, quote, style, musicFile = null, maxDuration
     // Prepare input props with simple filenames (staticFile will look in public/)
     const inputProps = {
       quote,
+      subtitle,
       videoSrc: videoDestName,
       musicSrc: musicDestName,
-      style
+      style,
+      subtitleStyle
     };
     
     console.log('Bundling Remotion project...');

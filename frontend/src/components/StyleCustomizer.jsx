@@ -19,6 +19,12 @@ export default function StyleCustomizer({ onChange }) {
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     animation: 'none'
   });
+  const [subtitleStyle, setSubtitleStyle] = useState({
+    fontSize: null, // null means inherit (60% of main)
+    fontColor: null, // null means inherit from main
+    backgroundColor: null, // null means inherit from main
+    position: 'bottom'
+  });
   const [options, setOptions] = useState({
     addMusic: true,
     autoDelete: true,
@@ -45,13 +51,19 @@ export default function StyleCustomizer({ onChange }) {
   const handleChange = (field, value) => {
     const newStyle = { ...style, [field]: value };
     setStyle(newStyle);
-    onChange(newStyle, options);
+    onChange(newStyle, subtitleStyle, options);
+  };
+
+  const handleSubtitleChange = (field, value) => {
+    const newSubtitleStyle = { ...subtitleStyle, [field]: value };
+    setSubtitleStyle(newSubtitleStyle);
+    onChange(style, newSubtitleStyle, options);
   };
 
   const handleOptionChange = (field, value) => {
     const newOptions = { ...options, [field]: value };
     setOptions(newOptions);
-    onChange(style, newOptions);
+    onChange(style, subtitleStyle, newOptions);
   };
 
   return (
@@ -118,6 +130,70 @@ export default function StyleCustomizer({ onChange }) {
               {anim.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
             </option>
           ))}
+        </select>
+      </div>
+
+      <h3>Subtitle Styling</h3>
+
+      <div className="form-group">
+        <label htmlFor="subtitleFontSize">Subtitle Font Size: {subtitleStyle.fontSize || Math.round(style.fontSize * 0.6)}px</label>
+        <input
+          id="subtitleFontSize"
+          type="range"
+          min="10"
+          max="80"
+          value={subtitleStyle.fontSize || Math.round(style.fontSize * 0.6)}
+          onChange={(e) => handleSubtitleChange('fontSize', parseInt(e.target.value))}
+        />
+        <button 
+          onClick={() => handleSubtitleChange('fontSize', null)}
+          style={{ fontSize: '12px', padding: '4px 8px', marginLeft: '10px' }}
+        >
+          Reset to Auto
+        </button>
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="subtitleFontColor">Subtitle Font Color:</label>
+        <input
+          id="subtitleFontColor"
+          type="color"
+          value={subtitleStyle.fontColor || style.fontColor}
+          onChange={(e) => handleSubtitleChange('fontColor', e.target.value)}
+        />
+        <button 
+          onClick={() => handleSubtitleChange('fontColor', null)}
+          style={{ fontSize: '12px', padding: '4px 8px', marginLeft: '10px' }}
+        >
+          Inherit from Main
+        </button>
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="subtitleBgColor">Subtitle Background:</label>
+        <input
+          id="subtitleBgColor"
+          type="color"
+          value={subtitleStyle.backgroundColor || style.backgroundColor}
+          onChange={(e) => handleSubtitleChange('backgroundColor', e.target.value)}
+        />
+        <button 
+          onClick={() => handleSubtitleChange('backgroundColor', null)}
+          style={{ fontSize: '12px', padding: '4px 8px', marginLeft: '10px' }}
+        >
+          Inherit from Main
+        </button>
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="subtitlePosition">Subtitle Position:</label>
+        <select
+          id="subtitlePosition"
+          value={subtitleStyle.position}
+          onChange={(e) => handleSubtitleChange('position', e.target.value)}
+        >
+          <option value="top">Top</option>
+          <option value="bottom">Bottom</option>
         </select>
       </div>
 

@@ -20,7 +20,8 @@
     "@remotion/renderer": "^4.0.0",
     "remotion": "^4.0.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "googleapis": "^128.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

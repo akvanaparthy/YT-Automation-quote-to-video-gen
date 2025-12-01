@@ -12,6 +12,7 @@ import {
 
 interface QuoteVideoProps {
   quote: string;
+  subtitle?: string;
   videoSrc: string;
   musicSrc?: string;
   style: {
@@ -22,13 +23,21 @@ interface QuoteVideoProps {
     animation: string;
     backgroundColor?: string;
   };
+  subtitleStyle?: {
+    fontSize?: number;
+    fontColor?: string;
+    backgroundColor?: string;
+    position?: 'top' | 'bottom';
+  };
 }
 
 export const QuoteVideo: React.FC<QuoteVideoProps> = ({
   quote,
+  subtitle,
   videoSrc,
   musicSrc,
   style,
+  subtitleStyle,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -151,6 +160,50 @@ export const QuoteVideo: React.FC<QuoteVideoProps> = ({
           </div>
         </div>
       </AbsoluteFill>
+
+      {/* Subtitle Overlay */}
+      {subtitle && (
+        <AbsoluteFill
+          style={{
+            justifyContent: subtitleStyle?.position === 'top' ? 'flex-start' : 'flex-end',
+            alignItems: 'center',
+            padding: '20px',
+            pointerEvents: 'none',
+          }}
+        >
+          <div
+            style={{
+              maxWidth: '90%',
+              textAlign: 'center',
+              ...(subtitleStyle?.position === 'top' ? { top: '5%' } : { bottom: '5%' }),
+              position: 'absolute',
+            }}
+          >
+            <div
+              style={{
+                backgroundColor: subtitleStyle?.backgroundColor || style.backgroundColor || 'rgba(0, 0, 0, 0.5)',
+                padding: '15px 25px',
+                borderRadius: '8px',
+              }}
+            >
+              <p
+                style={{
+                  fontSize: subtitleStyle?.fontSize || style.fontSize * 0.6,
+                  color: subtitleStyle?.fontColor || style.fontColor,
+                  fontFamily: style.fontFamily,
+                  margin: 0,
+                  textShadow: '1px 1px 3px rgba(0, 0, 0, 0.8)',
+                  lineHeight: 1.3,
+                  whiteSpace: 'pre-wrap',
+                  wordWrap: 'break-word',
+                }}
+              >
+                {subtitle}
+              </p>
+            </div>
+          </div>
+        </AbsoluteFill>
+      )}
     </AbsoluteFill>
   );
 };

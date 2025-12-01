@@ -44,10 +44,12 @@ export const clearHistory = async () => {
 };
 
 // Generate video with quote
-export const generateVideo = async (quote, style, options = {}) => {
+export const generateVideo = async (quote, subtitle, style, subtitleStyle, options = {}) => {
   const response = await apiClient.post('/videos/generate', {
     quote,
+    subtitle,
     style,
+    subtitleStyle,
     maxDuration: options.maxDuration,
     addMusic: options.addMusic !== false,
     autoDelete: options.autoDelete !== false
@@ -77,6 +79,20 @@ export const deleteVideo = async (filename) => {
 // Download video
 export const downloadVideo = (videoId) => {
   return `${API_BASE_URL}/videos/download/${videoId}`;
+};
+
+// Sync with Google Drive
+export const triggerSync = async () => {
+  const response = await apiClient.post('/sync', {}, {
+    timeout: 300000 // 5 minute timeout for sync operations
+  });
+  return response.data;
+};
+
+// Get sync status
+export const getSyncStatus = async () => {
+  const response = await apiClient.get('/sync/status');
+  return response.data;
 };
 
 export default apiClient;

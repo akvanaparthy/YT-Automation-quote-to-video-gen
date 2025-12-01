@@ -8,6 +8,7 @@ import QuoteInput from './components/QuoteInput';
 import StyleCustomizer from './components/StyleCustomizer';
 import VideoSelector from './components/VideoUpload';
 import VideoPreview from './components/VideoPreview';
+import SyncPanel from './components/SyncPanel';
 import { generateVideo, getHistory } from './services/api';
 import './App.css';
 
@@ -19,6 +20,12 @@ function App() {
     position: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     animation: 'none'
+  });
+  const [subtitleStyle, setSubtitleStyle] = useState({
+    fontSize: null,
+    fontColor: null,
+    backgroundColor: null,
+    position: 'bottom'
   });
   const [options, setOptions] = useState({
     addMusic: true,
@@ -46,10 +53,10 @@ function App() {
     }
   };
 
-  const handleQuoteSubmit = async (quote) => {
+  const handleQuoteSubmit = async ({ quote, subtitle }) => {
     try {
       setError(null);
-      const result = await generateVideo(quote, style, options);
+      const result = await generateVideo(quote, subtitle, style, subtitleStyle, options);
       if (result.success) {
         setGeneratedVideo(result);
         // Reload history
@@ -62,8 +69,9 @@ function App() {
     }
   };
 
-  const handleStyleChange = (newStyle, newOptions) => {
+  const handleStyleChange = (newStyle, newSubtitleStyle, newOptions) => {
     setStyle(newStyle);
+    setSubtitleStyle(newSubtitleStyle);
     if (newOptions) setOptions(newOptions);
   };
 
@@ -80,6 +88,9 @@ function App() {
       <main className="app-main">
         <div className="container">
           {error && <div className="error-banner">{error}</div>}
+
+          {/* Drive Sync Panel */}
+          <SyncPanel />
 
           {showHistory && (
             <div className="history-panel">

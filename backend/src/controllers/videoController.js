@@ -25,7 +25,7 @@ exports.listVideos = async (req, res, next) => {
 // Generate video with quote overlay
 exports.generateVideo = async (req, res, next) => {
   try {
-    const { quote, style = {}, maxDuration, addMusic = true, autoDelete = true } = req.body;
+    const { quote, subtitle, style = {}, subtitleStyle = {}, maxDuration, addMusic = true, autoDelete = true } = req.body;
 
     // Apply defaults to style
     const config = require('../config/config');
@@ -37,6 +37,14 @@ exports.generateVideo = async (req, res, next) => {
       backgroundColor: style.backgroundColor || null,
       animation: style.animation || 'none'
     };
+
+    // Apply defaults to subtitle style (inherits from main style by default)
+    const finalSubtitleStyle = subtitle ? {
+      fontSize: subtitleStyle.fontSize || finalStyle.fontSize * 0.6,
+      fontColor: subtitleStyle.fontColor || finalStyle.fontColor,
+      backgroundColor: subtitleStyle.backgroundColor || finalStyle.backgroundColor,
+      position: subtitleStyle.position || 'bottom'
+    } : null;
 
     // Select random video
     const selectedVideo = await randomSelector.selectRandomVideo();
@@ -56,11 +64,13 @@ exports.generateVideo = async (req, res, next) => {
       }
     }
 
-    // Process video with quote overlay, music, and duration
+    // Process video with quote overlay, subtitle, music, and duration
     const outputPath = await videoProcessor.processVideo(
       selectedVideo, 
-      quote, 
+      quote,
+      subtitle,
       finalStyle,
+      finalSubtitleStyle,
       selectedMusic,
       maxDuration
     );

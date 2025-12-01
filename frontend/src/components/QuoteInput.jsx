@@ -7,6 +7,7 @@ import { useState } from 'react';
 
 export default function QuoteInput({ onSubmit }) {
   const [quote, setQuote] = useState('');
+  const [subtitle, setSubtitle] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -15,8 +16,9 @@ export default function QuoteInput({ onSubmit }) {
 
     setLoading(true);
     try {
-      await onSubmit(quote);
+      await onSubmit({ quote, subtitle: subtitle.trim() || null });
       setQuote('');
+      setSubtitle('');
     } catch (err) {
       console.error('Error submitting quote:', err);
     } finally {
@@ -37,6 +39,18 @@ export default function QuoteInput({ onSubmit }) {
           disabled={loading}
         />
         <div className="char-count">{quote.length}/500</div>
+        
+        <textarea
+          value={subtitle}
+          onChange={(e) => setSubtitle(e.target.value)}
+          placeholder="Enter subtitle (optional)..."
+          rows="2"
+          maxLength="200"
+          disabled={loading}
+          style={{ marginTop: '10px' }}
+        />
+        <div className="char-count">{subtitle.length}/200</div>
+        
         <button type="submit" disabled={!quote.trim() || loading}>
           {loading ? 'Generating...' : 'Generate Video'}
         </button>

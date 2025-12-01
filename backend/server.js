@@ -3,6 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const config = require('./src/config/config');
+const driveSyncService = require('./src/services/driveSyncService');
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.get('/api/health', (req, res) => {
 // Routes
 app.use('/api', require('./src/routes/video.routes'));
 app.use('/api', require('./src/routes/upload.routes'));
+app.use('/api', require('./src/routes/sync.routes'));
 
 // 404 handler
 app.use((req, res) => {
@@ -38,8 +40,11 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = config.PORT;
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`Server running on http://localhost:${PORT}`);
   console.log(`Environment: ${config.NODE_ENV}`);
   console.log(`API available at http://localhost:${PORT}/api`);
+  
+  // Initialize Drive sync
+  await driveSyncService.initializeSync();
 });
