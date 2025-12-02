@@ -27,7 +27,7 @@ interface QuoteVideoProps {
     fontSize?: number;
     fontColor?: string;
     backgroundColor?: string;
-    position?: 'top' | 'bottom';
+    position?: 'top' | 'bottom' | 'below-text';
   };
 }
 
@@ -157,12 +157,30 @@ export const QuoteVideo: React.FC<QuoteVideoProps> = ({
             >
               {quote}
             </p>
+            {/* Subtitle below text */}
+            {subtitle && subtitleStyle?.position === 'below-text' && (
+              <p
+                style={{
+                  fontSize: subtitleStyle?.fontSize || style.fontSize * 0.6,
+                  color: subtitleStyle?.fontColor || style.fontColor,
+                  fontFamily: style.fontFamily,
+                  margin: 0,
+                  marginTop: '20px',
+                  textShadow: '1px 1px 3px rgba(0, 0, 0, 0.8)',
+                  lineHeight: 1.3,
+                  whiteSpace: 'pre-wrap',
+                  wordWrap: 'break-word',
+                }}
+              >
+                {subtitle}
+              </p>
+            )}
           </div>
         </div>
       </AbsoluteFill>
 
       {/* Subtitle Overlay */}
-      {subtitle && (
+      {subtitle && subtitleStyle?.position !== 'below-text' && (
         <AbsoluteFill
           style={{
             justifyContent: subtitleStyle?.position === 'top' ? 'flex-start' : 'flex-end',

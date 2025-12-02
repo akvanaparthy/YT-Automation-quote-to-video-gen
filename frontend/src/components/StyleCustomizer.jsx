@@ -23,7 +23,7 @@ export default function StyleCustomizer({ onChange }) {
     fontSize: null, // null means inherit (60% of main)
     fontColor: null, // null means inherit from main
     backgroundColor: null, // null means inherit from main
-    position: 'bottom'
+    position: 'below-text'
   });
   const [options, setOptions] = useState({
     addMusic: true,
@@ -192,8 +192,9 @@ export default function StyleCustomizer({ onChange }) {
           value={subtitleStyle.position}
           onChange={(e) => handleSubtitleChange('position', e.target.value)}
         >
-          <option value="top">Top</option>
-          <option value="bottom">Bottom</option>
+          <option value="below-text">Below Text</option>
+          <option value="top">Top of Screen</option>
+          <option value="bottom">Bottom of Screen</option>
         </select>
       </div>
 

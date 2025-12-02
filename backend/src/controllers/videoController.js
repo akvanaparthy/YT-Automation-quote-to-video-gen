@@ -43,7 +43,7 @@ exports.generateVideo = async (req, res, next) => {
       fontSize: subtitleStyle.fontSize || finalStyle.fontSize * 0.6,
       fontColor: subtitleStyle.fontColor || finalStyle.fontColor,
       backgroundColor: subtitleStyle.backgroundColor || finalStyle.backgroundColor,
-      position: subtitleStyle.position || 'bottom'
+      position: subtitleStyle.position || 'below-text'
     } : null;
 
     // Select random video

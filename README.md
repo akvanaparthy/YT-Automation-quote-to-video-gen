@@ -1,110 +1,203 @@
 # Quote-to-Video Generator
 
-A web application that generates short-form videos with quote overlays suitable for YouTube Shorts, Instagram Reels, and TikTok.
+A web application that generates short-form videos with quote overlays suitable for YouTube Shorts, Instagram Reels, and TikTok. Features automatic Google Drive sync, custom text styling, and Remotion-powered rendering.
 
-## Quick Start
+## 🚀 Quick Start
 
-### Prerequisites
-- Node.js (v20 or higher)
-- Docker (for containerized deployment)
-
-### Backend Setup
+### Using Docker (Recommended)
 
 ```bash
+# 1. Clone repository
+git clone <your-repo-url>
+cd YT-Automation-quote-to-video-gen
+
+# 2. Start containers
+./start.bat  # Windows
+# or
+docker-compose up -d  # Linux/Mac
+
+# 3. Access application
+# Frontend: http://localhost:3000
+# Backend API: http://localhost:5000
+```
+
+### Manual Setup
+
+```bash
+# Backend
 cd backend
 npm install
 npm run dev
-```
 
-Server will start on `http://localhost:5000`
-
-### Frontend Setup
-
-```bash
+# Frontend (new terminal)
 cd frontend
 npm install
 npm run dev
 ```
 
-Application will open at `http://localhost:3000`
+## 📚 Documentation
 
-## Project Structure
+- **[Quick Start Guide](./QUICKSTART.md)** - Get up and running in 5 minutes
+- **[API Documentation](./API_DOCUMENTATION.md)** - Complete API reference
+- **[Postman Testing](./docs/POSTMAN_TESTING_GUIDE.md)** - Test API with Postman
+- **[n8n Integration](./docs/N8N_INTEGRATION.md)** - Automate with workflows
+- **[Drive Sync Setup](./docs/DRIVE_SYNC_GUIDE.md)** - Configure Google Drive sync
+- **[Troubleshooting](./docs/TROUBLESHOOTING.md)** - Fix common issues
+- **[Development Guide](./docs/DEVELOPMENT_GUIDE.md)** - For developers
+- **[Project Structure](./PROJECT_STRUCTURE.md)** - Code organization
 
-See [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) for the complete project structure, API documentation, and development phases.
-
-## API Endpoints
+## ✨ Features
 
 ### Video Generation
-- `POST /api/videos/generate` - Generate video with quote and subtitle
-- `GET /api/videos` - List available videos
-- `GET /api/videos/download/:videoId` - Download generated video
-- `DELETE /api/videos/:filename` - Delete video
+- ✅ Remotion-based rendering (browser-quality text)
+- ✅ Custom text styling (fonts, colors, sizes)
+- ✅ Subtitle support with independent styling
+- ✅ Multiple animations (fade, slide, zoom, bounce)
+- ✅ Automatic music integration
+- ✅ 9:16 aspect ratio (Shorts/Reels/TikTok format)
+- ✅ Auto-delete generated videos (24h, configurable)
 
-### File Upload
-- `POST /api/upload` - Upload new video or music file
+### Google Drive Sync
+- ✅ Automatic two-way sync with Drive folders
+- ✅ Download missing videos/music automatically
+- ✅ Remove local files deleted from Drive
+- ✅ Manual and auto-sync on startup
+- ✅ Corrupted file detection and re-download
 
-### Configuration
-- `GET /api/fonts` - Get available fonts
-- `GET /api/animations` - Get available animations
+### Management
+- ✅ Upload videos and music files
+- ✅ Generation history tracking
+- ✅ File management UI
+- ✅ REST API for automation
 
-### History
-- `GET /api/history` - Get generation history
-- `DELETE /api/history` - Clear history
+## 🎯 API Endpoints
 
-### Drive Sync
-- `POST /api/sync` - Trigger manual sync with Google Drive
-- `GET /api/sync/status` - Check sync configuration status
+### Video Generation
+```
+POST   /api/videos/generate  - Generate video with quote
+GET    /api/videos           - List available videos
+GET    /api/videos/download/:videoId - Download video
+GET    /api/history          - Get generation history
+```
 
-See [DRIVE_SYNC_GUIDE.md](./docs/DRIVE_SYNC_GUIDE.md) for detailed sync setup instructions.
+### Google Drive Sync
+```
+POST   /api/sync             - Trigger manual sync
+GET    /api/sync/status      - Check sync status
+```
 
-## Tech Stack
+### File Management
+```
+POST   /api/upload           - Upload video/music
+DELETE /api/videos/:filename - Delete file
+```
 
-- **Backend:** Node.js + Express.js + Remotion
-- **Frontend:** React + Vite
-- **Video Rendering:** Remotion (React-based)
-- **Storage:** Local file system
+See [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) for full details.
 
-## Features
+## 🛠️ Tech Stack
 
-- Generate videos with custom text overlays and subtitles
-- Customizable fonts, colors, and text positioning
-- Upload and manage video files
-- Support for 9:16 aspect ratio (Shorts/Reels format)
-- Background music integration
-- Multiple animation effects (fade, slide, zoom, bounce)
-- **Google Drive Sync** - Automatically sync videos and music with Google Drive
-- Generation history tracking
-- Auto-delete generated videos after 24 hours (configurable)
+- **Backend:** Node.js 20 + Express + Remotion 4.0
+- **Frontend:** React 18 + Vite
+- **Video Rendering:** Remotion (React-based, Chromium)
+- **Deployment:** Docker + Docker Compose
+- **Storage:** Local filesystem + Google Drive sync
 
-## Development Phases
+## 🧪 Testing
 
-**Phase 1 (Completed):** Backend core functionality
-- Remotion integration
-- Video processing with text overlay
-- API endpoints
+### Postman
+1. Import collection from [POSTMAN_TESTING_GUIDE.md](./docs/POSTMAN_TESTING_GUIDE.md)
+2. Test endpoints step-by-step
+3. Download generated videos
 
-**Phase 2:** File management
-- Upload handling
-- Video listing and deletion
+### n8n Automation
+1. Install n8n: https://n8n.io
+2. Follow [N8N_INTEGRATION.md](./docs/N8N_INTEGRATION.md)
+3. Create automated workflows
 
-**Phase 3:** Text styling features
-- Custom fonts
-- Animation effects
+## 🐛 Troubleshooting
 
-**Phase 4:** Frontend UI
-- React components
-- User interface
+**Common Issues:**
 
-**Phase 5:** Optimization and polish
+| Issue | Solution |
+|-------|----------|
+| "moov atom not found" | Corrupted videos, run Drive sync |
+| Port 5000 in use | `./stop.bat` then `./start.bat` |
+| Docker loop error | Start Docker Desktop first |
+| No videos available | Run sync or upload videos manually |
 
-## Next Steps
+See [TROUBLESHOOTING.md](./docs/TROUBLESHOOTING.md) for complete guide.
 
-1. Install Docker
-2. Run `docker-compose up --build`
-3. Access frontend at http://localhost:3000
-4. Upload test videos
-5. Test video generation
+## 📋 Example Request
 
-## License
+```bash
+curl -X POST http://localhost:5000/api/videos/generate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "quote": "Success is not final, failure is not fatal.",
+    "subtitle": "- Winston Churchill",
+    "style": {
+      "fontFamily": "Impact",
+      "fontSize": 80,
+      "fontColor": "#FFD700",
+      "position": "center",
+      "animation": "zoom-in"
+    },
+    "addMusic": true
+  }'
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "videoId": "generated_1764617930989.mp4",
+  "downloadUrl": "/api/videos/download/generated_1764617930989.mp4",
+  "hasMusic": true,
+  "duration": 8,
+  "autoDelete": true,
+  "expiresIn": "24 hours"
+}
+```
+
+## 🎨 Style Options
+
+**Fonts:** Arial, Impact, Courier New, Georgia, Comic Sans MS  
+**Positions:** top, center, bottom  
+**Animations:** none, fade-in, slide-in-left, slide-in-right, zoom-in, bounce  
+**Colors:** Any hex color (#FFFFFF, #FFD700, etc.)  
+**Background:** RGBA with transparency support
+
+## 🔧 Configuration
+
+### Environment Variables (docker-compose.yml)
+
+```yaml
+environment:
+  GOOGLE_DRIVE_API_KEY: your-api-key-here
+  DRIVE_VIDEOS_FOLDER: https://drive.google.com/drive/folders/...
+  DRIVE_MUSIC_FOLDER: https://drive.google.com/drive/folders/...
+  AUTO_SYNC_ON_START: true
+```
+
+See [DRIVE_SYNC_GUIDE.md](./docs/DRIVE_SYNC_GUIDE.md) for API key setup.
+
+## 📈 Development Phases
+
+✅ **Phase 1:** Backend core + Remotion integration  
+✅ **Phase 2:** File management + uploads  
+✅ **Phase 3:** Text styling + animations  
+✅ **Phase 4:** Frontend UI + React components  
+✅ **Phase 5:** Google Drive sync integration  
+✅ **Phase 6:** Docker deployment + optimization  
+
+## 🤝 Contributing
+
+See [DEVELOPMENT_GUIDE.md](./docs/DEVELOPMENT_GUIDE.md) for:
+- Code structure
+- Development workflow
+- Testing guidelines
+- Deployment process
+
+## 📄 License
 
 MIT
