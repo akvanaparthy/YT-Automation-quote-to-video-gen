@@ -1,0 +1,13 @@
+{
+  "name": "droplet-scheduler",
+  "version": "1.0.0",
+  "description": "Automatically start/stop DigitalOcean droplet on schedule",
+  "main": "droplet-scheduler.js",
+  "scripts": {
+    "start": "node droplet-scheduler.js"
+  },
+  "dependencies": {
+    "node-cron": "^3.0.3",
+    "axios": "^1.6.2"
+  }
+}

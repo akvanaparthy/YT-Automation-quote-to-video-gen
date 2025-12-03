@@ -109,7 +109,9 @@ htmlcov/
 *.min.js
 *.min.css
 
-/Documentation
+#Documentation
+docs/*
+
 
 # Media files (uploaded/generated content)
 *.mp4
