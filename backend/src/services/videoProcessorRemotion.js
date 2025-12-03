@@ -92,6 +92,11 @@ exports.processVideo = async (video, quote, subtitle, style, subtitleStyle, musi
     console.log('Composition selected:', composition.id);
     console.log('Rendering video...');
 
+    // Determine optimal concurrency (max 2 for most VPS, or use system cores)
+    const os = require('os');
+    const cpuCount = os.cpus().length;
+    const optimalConcurrency = Math.min(cpuCount, 2); // Limit to 2 for stability
+
     // Render the video
     await renderMedia({
       composition: {
@@ -102,7 +107,7 @@ exports.processVideo = async (video, quote, subtitle, style, subtitleStyle, musi
       codec: 'h264',
       outputLocation: path.resolve(outputPath),
       inputProps,
-      concurrency: 4, // Parallel rendering
+      concurrency: optimalConcurrency, // Use system-appropriate concurrency
       frameRange: [0, durationInFrames - 1], // 0-indexed, so last frame is durationInFrames - 1
       everyNthFrame: 1,
       numberOfGifLoops: null,
