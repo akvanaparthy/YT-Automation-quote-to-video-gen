@@ -92,14 +92,9 @@ vite.config.ts.timestamp-*
 .nvmrc
 .node-version
 
-# Docker
+# Docker (keep Dockerfiles and docker-compose.yml for deployment)
 .dockerignore
-Dockerfile
-docker-compose*.yml
 .docker/
-
-# Documentation
-docs/
 
 # Coverage and testing
 coverage/
