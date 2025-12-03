@@ -1,0 +1,47 @@
+name: Droplet Scheduler
+
+on:
+  schedule:
+    # 9 AM IST = 3:30 AM UTC
+    - cron: '30 3 * * *'
+    # 5 PM IST = 11:30 AM UTC
+    - cron: '30 11 * * *'
+    # 1 AM IST = 7:30 PM UTC (previous day)
+    - cron: '30 19 * * *'
+  workflow_dispatch: # Manual trigger for testing
+
+jobs:
+  start-droplet:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Start DigitalOcean Droplet
+        run: |
+          echo "Starting droplet..."
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
+            "https://api.digitalocean.com/v2/droplets/${{ secrets.DO_DROPLET_ID }}/actions" \
+            -d '{"type":"power_on"}'
+          
+          echo "Waiting 60 seconds for droplet to boot..."
+          sleep 60
+          
+      - name: Wait for services to be ready
+        run: |
+          echo "Waiting for services to start..."
+          sleep 30
+          
+          # Check if n8n is accessible
+          for i in {1..10}; do
+            if curl -f https://ytautomateqtov.tech/healthz 2>/dev/null; then
+              echo "n8n is ready!"
+              break
+            fi
+            echo "Attempt $i: n8n not ready yet, waiting..."
+            sleep 10
+          done
+          
+      - name: Trigger n8n workflow
+        run: |
+          echo "n8n workflow will auto-execute via internal scheduling"
+          echo "Droplet will auto-shutdown after workflow completes"
