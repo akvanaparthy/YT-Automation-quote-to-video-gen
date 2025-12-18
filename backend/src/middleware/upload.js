@@ -1,39 +1,24 @@
 /**
  * Upload Middleware
- * Multer configuration for file uploads
+ * Multer configuration for file uploads to Cloudinary
  */
 
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
-const config = require('../config/config');
 
-// Ensure upload directory exists
-const uploadDir = config.VIDEO_STORAGE_PATH;
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+// Use memory storage for uploading to Cloudinary
+const storage = multer.memoryStorage();
 
-// Storage configuration
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    // Generate unique filename with timestamp
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    const name = path.basename(file.originalname, ext);
-    cb(null, name + '-' + uniqueSuffix + ext);
-  }
-});
-
-// File filter
+// File filter - allow both video and audio files
 const fileFilter = (req, file, cb) => {
   const ext = path.extname(file.originalname).toLowerCase();
+  const allowedFormats = [
+    '.mp4', '.mov', '.avi', '.mkv', '.webm', // Videos
+    '.mp3', '.wav', '.m4a', '.aac', '.ogg'   // Audio
+  ];
 
-  if (!config.ALLOWED_FORMATS.includes(ext)) {
-    return cb(new Error(`File format not allowed. Allowed formats: ${config.ALLOWED_FORMATS.join(', ')}`));
+  if (!allowedFormats.includes(ext)) {
+    return cb(new Error(`File format not allowed. Allowed formats: ${allowedFormats.join(', ')}`));
   }
 
   cb(null, true);
@@ -43,6 +28,6 @@ module.exports = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: config.MAX_VIDEO_SIZE
+    fileSize: 100 * 1024 * 1024 // 100MB
   }
 });

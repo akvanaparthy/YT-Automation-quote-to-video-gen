@@ -3,8 +3,15 @@ module.exports = {
   PORT: process.env.PORT || 5000,
   NODE_ENV: process.env.NODE_ENV || 'development',
 
+  // Cloudinary
+  CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
+  CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
+  CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
+  CLOUDINARY_FOLDER: process.env.CLOUDINARY_FOLDER || 'yt-automation-qtov',
+
   // Paths
   VIDEO_STORAGE_PATH: './storage/videos',
+  MUSIC_STORAGE_PATH: './storage/music',
   OUTPUT_PATH: './storage/output',
   FONTS_PATH: './src/assets/fonts',
   HISTORY_PATH: './storage/history.json',
