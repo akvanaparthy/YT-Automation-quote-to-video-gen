@@ -8,6 +8,9 @@ module.exports = {
   CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
   CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
   CLOUDINARY_FOLDER: process.env.CLOUDINARY_FOLDER || 'yt-automation-qtov',
+  
+  // Sync Settings
+  SYNC_FILE_COUNT: process.env.SYNC_FILE_COUNT || 'all', // 'all' or number (e.g., '1', '2')
 
   // Paths
   VIDEO_STORAGE_PATH: './storage/videos',

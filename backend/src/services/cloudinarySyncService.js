@@ -29,11 +29,23 @@ async function syncVideos() {
   try {
     await ensureDirectoryExists(config.VIDEO_STORAGE_PATH);
     
-    const videos = await cloudinaryService.listVideos('videos');
+    let videos = await cloudinaryService.listVideos('videos');
     
     if (videos.length === 0) {
       console.log('No videos found in Cloudinary');
       return;
+    }
+
+    // Check if we should limit downloads
+    const syncCount = config.SYNC_FILE_COUNT;
+    if (syncCount !== 'all') {
+      const count = parseInt(syncCount);
+      if (!isNaN(count) && count > 0 && count < videos.length) {
+        // Randomly select 'count' videos
+        const shuffled = videos.sort(() => 0.5 - Math.random());
+        videos = shuffled.slice(0, count);
+        console.log(`Randomly selected ${count} of ${videos.length} videos to download`);
+      }
     }
 
     console.log(`Found ${videos.length} videos in Cloudinary`);
@@ -71,11 +83,23 @@ async function syncMusic() {
   try {
     await ensureDirectoryExists(config.MUSIC_STORAGE_PATH);
     
-    const musicFiles = await cloudinaryService.listVideos('music');
+    let musicFiles = await cloudinaryService.listVideos('music');
     
     if (musicFiles.length === 0) {
       console.log('No music found in Cloudinary');
       return;
+    }
+
+    // Check if we should limit downloads
+    const syncCount = config.SYNC_FILE_COUNT;
+    if (syncCount !== 'all') {
+      const count = parseInt(syncCount);
+      if (!isNaN(count) && count > 0 && count < musicFiles.length) {
+        // Randomly select 'count' music files
+        const shuffled = musicFiles.sort(() => 0.5 - Math.random());
+        musicFiles = shuffled.slice(0, count);
+        console.log(`Randomly selected ${count} of ${musicFiles.length} music files to download`);
+      }
     }
 
     console.log(`Found ${musicFiles.length} music files in Cloudinary`);

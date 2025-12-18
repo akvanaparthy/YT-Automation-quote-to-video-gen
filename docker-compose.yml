@@ -14,6 +14,7 @@ services:
       - CLOUDINARY_API_KEY=517279382221838
       - CLOUDINARY_API_SECRET=1mAjornu-Clyk-vtBwSZ2L8U3Uc
       - CLOUDINARY_FOLDER=yt-automation-qtov
+      - SYNC_FILE_COUNT=1
     volumes:
       - ./backend/storage/videos:/app/storage/videos
       - ./backend/storage/output:/app/storage/output
