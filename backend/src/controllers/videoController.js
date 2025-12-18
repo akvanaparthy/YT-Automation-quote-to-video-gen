@@ -8,6 +8,7 @@ const fileManager = require('../utils/fileManager');
 const randomSelector = require('../utils/randomSelector');
 const historyManager = require('../utils/historyManager');
 const fs = require('fs').promises;
+const path = require('path');
 
 // List all available source videos
 exports.listVideos = async (req, res, next) => {
