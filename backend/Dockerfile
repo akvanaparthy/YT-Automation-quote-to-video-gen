@@ -29,6 +29,9 @@ COPY remotion/package*.json ./remotion/
 WORKDIR /app/remotion
 RUN npm install
 
+# Pre-download Chrome Headless Shell for Remotion
+RUN npx remotion browser ensure
+
 # Back to app directory
 WORKDIR /app
 
