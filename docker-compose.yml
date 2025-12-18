@@ -10,22 +10,23 @@ services:
       - NODE_ENV=production
       - PORT=5000
       - CORS_ORIGIN=http://localhost:3000
-      - CLOUDINARY_CLOUD_NAME=dzjlmqnjo
-      - CLOUDINARY_API_KEY=517279382221838
-      - CLOUDINARY_API_SECRET=1mAjornu-Clyk-vtBwSZ2L8U3Uc
-      - CLOUDINARY_FOLDER=yt-automation-qtov
-      - SYNC_FILE_COUNT=1
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+      - CLOUDINARY_FOLDER=${CLOUDINARY_FOLDER:-yt-automation-qtov}
+      - SYNC_FILE_COUNT=${SYNC_FILE_COUNT:-1}
+      - VIDEO_QUALITY=${VIDEO_QUALITY:-95}
     volumes:
       - ./backend/storage/videos:/app/storage/videos
       - ./backend/storage/output:/app/storage/output
       - ./backend/storage/music:/app/storage/music
       - ./backend/storage/fonts:/app/storage/fonts
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/api/videos"]
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 40s
     networks:
       - app-network
 
