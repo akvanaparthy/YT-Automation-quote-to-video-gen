@@ -6,6 +6,7 @@
 const path = require('path');
 const fs = require('fs').promises;
 const config = require('../config/config');
+const cloudinaryService = require('./cloudinaryService');
 const { bundle } = require('@remotion/bundler');
 const { renderMedia, selectComposition } = require('@remotion/renderer');
 
@@ -120,6 +121,15 @@ exports.processVideo = async (video, quote, subtitle, style, subtitleStyle, musi
 
     console.log(`Video processed successfully: ${outputPath}`);
 
+    // Upload to Cloudinary
+    console.log('Uploading to Cloudinary...');
+    const cloudinaryResult = await cloudinaryService.uploadVideo(
+      outputPath,
+      'output',
+      outputFilename
+    );
+    console.log(`✓ Uploaded to Cloudinary: ${cloudinaryResult.secure_url}`);
+
     // Clean up temporary files from public directory
     try {
       await fs.unlink(videoDestPath);
@@ -130,14 +140,23 @@ exports.processVideo = async (video, quote, subtitle, style, subtitleStyle, musi
       console.error('Cleanup error:', cleanupErr);
     }
 
-    // Schedule cleanup if enabled
-    if (config.OUTPUT_CLEANUP_ENABLED) {
-      setTimeout(() => {
-        fs.unlink(outputPath).catch(err => console.error('Cleanup error:', err));
-      }, config.OUTPUT_CLEANUP_TIME);
+    // Clean up local output file after upload
+    try {
+      await fs.unlink(outputPath);
+      console.log('✓ Cleaned up local file');
+    } catch (cleanupErr) {
+      console.error('Local cleanup error:', cleanupErr);
     }
 
-    return outputPath;
+    // Return Cloudinary result
+    return {
+      url: cloudinaryResult.secure_url,
+      public_id: cloudinaryResult.public_id,
+      filename: outputFilename,
+      duration: finalDuration,
+      format: cloudinaryResult.format,
+      bytes: cloudinaryResult.bytes
+    };
 
   } catch (err) {
     console.error('Remotion processing error:', err);

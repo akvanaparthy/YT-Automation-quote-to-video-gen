@@ -65,7 +65,7 @@ exports.generateVideo = async (req, res, next) => {
     }
 
     // Process video with quote overlay, subtitle, music, and duration
-    const outputPath = await videoProcessor.processVideo(
+    const result = await videoProcessor.processVideo(
       selectedVideo, 
       quote,
       subtitle,
@@ -75,13 +75,10 @@ exports.generateVideo = async (req, res, next) => {
       maxDuration
     );
     
-    // Extract filename from path
-    const path = require('path');
-    const filename = path.basename(outputPath);
-
-    // Get video info for duration
-    const videoInfo = await videoProcessor.getVideoInfo(outputPath);
-    const finalDuration = Math.round(videoInfo.duration);
+    // result now contains: { url, public_id, filename, duration, format, bytes }
+    const filename = result.filename;
+    const videoUrl = result.url;
+    const finalDuration = Math.round(result.duration);
 
     // Add to history
     await historyManager.addHistoryEntry({
@@ -89,16 +86,19 @@ exports.generateVideo = async (req, res, next) => {
       videoUsed: path.basename(selectedVideo.path),
       musicUsed: selectedMusic ? path.basename(selectedMusic.path) : null,
       duration: finalDuration,
-      autoDelete: autoDelete
+      autoDelete: autoDelete,
+      cloudinaryUrl: videoUrl,
+      cloudinaryPublicId: result.public_id
     });
 
-    // Schedule deletion if autoDelete is true
+    // Schedule deletion from Cloudinary if autoDelete is true
     if (autoDelete === true) {
+      const cloudinaryService = require('../services/cloudinaryService');
       const ONE_DAY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
       setTimeout(async () => {
         try {
-          await fs.unlink(outputPath);
-          console.log(`Auto-deleted video: ${filename}`);
+          await cloudinaryService.deleteVideo(result.public_id);
+          console.log(`Auto-deleted video from Cloudinary: ${filename}`);
         } catch (err) {
           console.error(`Failed to auto-delete video ${filename}:`, err);
         }
@@ -108,10 +108,13 @@ exports.generateVideo = async (req, res, next) => {
     res.json({
       success: true,
       videoId: filename,
-      downloadUrl: `/api/videos/download/${filename}`,
-      message: 'Video generated successfully',
+      videoUrl: videoUrl,
+      cloudinaryPublicId: result.public_id,
+      message: 'Video generated successfully and uploaded to Cloudinary',
       hasMusic: !!selectedMusic,
       duration: finalDuration,
+      format: result.format,
+      bytes: result.bytes,
       autoDelete: autoDelete,
       expiresIn: autoDelete ? '24 hours' : 'never'
     });
