@@ -10,10 +10,10 @@ services:
       - NODE_ENV=production
       - PORT=5000
       - CORS_ORIGIN=http://localhost:3000
-      - GOOGLE_DRIVE_API_KEY=AIzaSyCtP1DQtGorU2ckX_Nag2HUDkJDCCnqaOI
-      - DRIVE_VIDEOS_FOLDER=https://drive.google.com/drive/folders/198qexox96qxMGmecXoLE2gfNaThMTb41
-      - DRIVE_MUSIC_FOLDER=https://drive.google.com/drive/folders/15j9hFTfKcIsSPufHy_ykT-2WbrWB4dFD
-      - AUTO_SYNC_ON_START=true
+      - CLOUDINARY_CLOUD_NAME=dzjlmqnjo
+      - CLOUDINARY_API_KEY=517279382221838
+      - CLOUDINARY_API_SECRET=1mAjornu-Clyk-vtBwSZ2L8U3Uc
+      - CLOUDINARY_FOLDER=yt-automation-qtov
     volumes:
       - ./backend/storage/videos:/app/storage/videos
       - ./backend/storage/output:/app/storage/output
