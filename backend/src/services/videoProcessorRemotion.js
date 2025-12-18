@@ -32,19 +32,8 @@ async function getBundleLocation() {
     
     cachedBundleLocation = await bundle({
       entryPoint: path.join(remotionDir, 'src/index.ts'),
-      // Configure webpack to copy public directory to bundle location
-      webpackOverride: (config) => {
-        return {
-          ...config,
-          resolve: {
-            ...config.resolve,
-            alias: {
-              ...config.resolve?.alias,
-              '@public': publicDir
-            }
-          }
-        };
-      },
+      // Specify public directory so bundle server serves files from there
+      publicDir: publicDir,
       onProgress: ({ progress }) => {
         if (progress % 20 === 0) {
           console.log(`Bundling: ${(progress * 100).toFixed(0)}%`);
@@ -52,6 +41,7 @@ async function getBundleLocation() {
       },
     });
     console.log('✓ Bundle cached at:', cachedBundleLocation);
+    console.log('✓ Serving static files from:', publicDir);
   }
   return cachedBundleLocation;
 }
@@ -114,6 +104,21 @@ exports.processVideo = async (video, quote, subtitle, style, subtitleStyle, musi
     
     // Get cached bundle (or create if first time)
     const bundleLocation = await getBundleLocation();
+    
+    // Copy files to bundle's public directory (required for bundle server)
+    const bundlePublicDir = path.join(bundleLocation, 'public');
+    if (!fsSync.existsSync(bundlePublicDir)) {
+      fsSync.mkdirSync(bundlePublicDir, { recursive: true });
+    }
+    const bundleVideoPath = path.join(bundlePublicDir, videoDestName);
+    await fs.copyFile(videoDestPath, bundleVideoPath);
+    
+    if (musicDestName) {
+      const bundleMusicPath = path.join(bundlePublicDir, musicDestName);
+      const remotionMusicPath = path.join(publicDir, musicDestName);
+      await fs.copyFile(remotionMusicPath, bundleMusicPath);
+    }
+    
     console.log('Selecting composition...');
 
     // Select the composition
@@ -167,20 +172,25 @@ exports.processVideo = async (video, quote, subtitle, style, subtitleStyle, musi
     );
     console.log(`✓ Uploaded to Cloudinary: ${cloudinaryResult.secure_url}`);
 
-    // Clean up temporary files from public directory after a delay
-    // (Give the bundle server time to finish serving if needed)
-    setTimeout(async () => {
-      try {
-        await fs.unlink(videoDestPath);
-        if (musicDestName) {
-          await fs.unlink(path.join(publicDir, musicDestName));
-        }
-        console.log('✓ Cleaned up public directory files');
-      } catch (cleanupErr) {
-        // Ignore cleanup errors (file might not exist)
+    // Note: We keep files in public/ directory for bundle server access
+    // Clean up temporary files from both locations
+    try {
+      // Clean from remotion/public
+      await fs.unlink(videoDestPath);
+      if (musicDestName) {
+        await fs.unlink(path.join(publicDir, musicDestName));
       }
-    }, 5000); // Delay 5 seconds
-
+      
+      // Clean from bundle/public
+      const bundlePublicDir = path.join(bundleLocation, 'public');
+      await fs.unlink(path.join(bundlePublicDir, videoDestName));
+      if (musicDestName) {
+        await fs.unlink(path.join(bundlePublicDir, musicDestName));
+      }
+      console.log('✓ Cleaned up temporary files');
+    } catch (cleanupErr) {
+      // Ignore cleanup errors
+    }
     // Clean up local output file after upload
     try {
       await fs.unlink(outputPath);
