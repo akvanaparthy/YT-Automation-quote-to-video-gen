@@ -18,6 +18,9 @@ RUN apt-get update && apt-get install -y \
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
+# Set Remotion browser cache directory
+ENV REMOTION_BROWSER_EXECUTABLE_CACHE_DIR=/app/.remotion-browser-cache
+
 # Copy backend package files
 COPY package*.json ./
 
@@ -29,11 +32,11 @@ COPY remotion/package*.json ./remotion/
 WORKDIR /app/remotion
 RUN npm install
 
-# Pre-download Chrome Headless Shell for Remotion
-RUN npx remotion browser ensure
-
 # Back to app directory
 WORKDIR /app
+
+# Pre-download Chrome Headless Shell for Remotion (must be from /app, not /app/remotion)
+RUN npx --prefix ./remotion remotion browser ensure
 
 # Copy all application files
 COPY . .
