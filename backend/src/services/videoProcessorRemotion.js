@@ -13,6 +13,28 @@ const { renderMedia, selectComposition } = require('@remotion/renderer');
 // Remotion project directory
 const remotionDir = path.join(__dirname, '../../remotion');
 
+// Cache for bundled Remotion project (reused across all renders)
+let cachedBundleLocation = null;
+
+/**
+ * Get or create the Remotion bundle (cached for performance)
+ */
+async function getBundleLocation() {
+  if (!cachedBundleLocation) {
+    console.log('Creating Remotion bundle (first time only)...');
+    cachedBundleLocation = await bundle({
+      entryPoint: path.join(remotionDir, 'src/index.ts'),
+      onProgress: ({ progress }) => {
+        if (progress % 20 === 0) {
+          console.log(`Bundling: ${(progress * 100).toFixed(0)}%`);
+        }
+      },
+    });
+    console.log('✓ Bundle cached at:', cachedBundleLocation);
+  }
+  return cachedBundleLocation;
+}
+
 // Ensure output directory exists
 const fsSync = require('fs');
 if (!fsSync.existsSync(config.OUTPUT_PATH)) {
@@ -32,23 +54,10 @@ exports.processVideo = async (video, quote, subtitle, style, subtitleStyle, musi
     if (subtitle) console.log('Subtitle:', subtitle);
     console.log('Output path:', outputPath);
 
-    // Create public directory in remotion if it doesn't exist
-    const publicDir = path.join(remotionDir, 'public');
-    if (!fsSync.existsSync(publicDir)) {
-      fsSync.mkdirSync(publicDir, { recursive: true });
-    }
-
-    // Copy video and music to remotion public directory
-    const videoDestName = `video_${timestamp}.mp4`;
-    const videoDestPath = path.join(publicDir, videoDestName);
-    await fs.copyFile(video.path, videoDestPath);
-
-    let musicDestName = null;
-    if (musicFile) {
-      musicDestName = `music_${timestamp}.mp3`;
-      const musicDestPath = path.join(publicDir, musicDestName);
-      await fs.copyFile(musicFile.path, musicDestPath);
-    }
+    // Use original file paths directly (no copying needed)
+    // Remotion can access files from anywhere via absolute paths
+    const videoAbsolutePath = path.resolve(video.path);
+    const musicAbsolutePath = musicFile ? path.resolve(musicFile.path) : null;
 
     // Get video duration
     const videoInfo = await getVideoInfo(video.path);
@@ -58,29 +67,18 @@ exports.processVideo = async (video, quote, subtitle, style, subtitleStyle, musi
 
     const durationInFrames = Math.floor(finalDuration * 30); // 30 fps
 
-    // Prepare input props with simple filenames (staticFile will look in public/)
+    // Prepare input props with absolute paths
     const inputProps = {
       quote,
       subtitle,
-      videoSrc: videoDestName,
-      musicSrc: musicDestName,
+      videoSrc: videoAbsolutePath,
+      musicSrc: musicAbsolutePath,
       style,
       subtitleStyle
     };
     
-    console.log('Bundling Remotion project...');
-    
-    // Bundle the Remotion project
-    const bundleLocation = await bundle({
-      entryPoint: path.join(remotionDir, 'src/index.ts'),
-      onProgress: ({ progress }) => {
-        if (progress % 20 === 0) {
-          console.log(`Bundling: ${(progress * 100).toFixed(0)}%`);
-        }
-      },
-    });
-
-    console.log('Bundle created at:', bundleLocation);
+    // Get cached bundle (or create if first time)
+    const bundleLocation = await getBundleLocation();
     console.log('Selecting composition...');
 
     // Select the composition
@@ -93,10 +91,10 @@ exports.processVideo = async (video, quote, subtitle, style, subtitleStyle, musi
     console.log('Composition selected:', composition.id);
     console.log('Rendering video...');
 
-    // Determine optimal concurrency (max 2 for most VPS, or use system cores)
+    // Determine optimal concurrency (increased from 2 to 6 for better performance)
     const os = require('os');
     const cpuCount = os.cpus().length;
-    const optimalConcurrency = Math.min(cpuCount, 2); // Limit to 2 for stability
+    const optimalConcurrency = Math.min(cpuCount, 6);
 
     // Render the video
     await renderMedia({
@@ -108,13 +106,17 @@ exports.processVideo = async (video, quote, subtitle, style, subtitleStyle, musi
       codec: 'h264',
       outputLocation: path.resolve(outputPath),
       inputProps,
-      concurrency: optimalConcurrency, // Use system-appropriate concurrency
-      frameRange: [0, durationInFrames - 1], // 0-indexed, so last frame is durationInFrames - 1
+      concurrency: optimalConcurrency,
+      quality: config.VIDEO_QUALITY, // Dynamic quality based on env var (default: 95 for high clarity)
+      pixelFormat: 'yuv420p', // Better compatibility
+      frameRange: [0, durationInFrames - 1],
       everyNthFrame: 1,
       numberOfGifLoops: null,
       onProgress: ({ progress, renderedFrames, encodedFrames }) => {
-        if (renderedFrames % 30 === 0) {
-          console.log(`Rendering: ${(progress * 100).toFixed(1)}% (${renderedFrames}/${durationInFrames} frames)`);
+        // Log every 10% progress to reduce noise
+        const progressPercent = Math.floor(progress * 100);
+        if (progressPercent % 10 === 0 && renderedFrames > 0) {
+          console.log(`Rendering: ${progressPercent}% (${renderedFrames}/${durationInFrames} frames)`);
         }
       },
     });
@@ -129,16 +131,6 @@ exports.processVideo = async (video, quote, subtitle, style, subtitleStyle, musi
       outputFilename
     );
     console.log(`✓ Uploaded to Cloudinary: ${cloudinaryResult.secure_url}`);
-
-    // Clean up temporary files from public directory
-    try {
-      await fs.unlink(videoDestPath);
-      if (musicDestName) {
-        await fs.unlink(path.join(publicDir, musicDestName));
-      }
-    } catch (cleanupErr) {
-      console.error('Cleanup error:', cleanupErr);
-    }
 
     // Clean up local output file after upload
     try {

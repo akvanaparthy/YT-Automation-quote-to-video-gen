@@ -5,6 +5,23 @@ require('dotenv').config();
 const config = require('./src/config/config');
 const cloudinarySyncService = require('./src/services/cloudinarySyncService');
 
+// Validate required environment variables
+const requiredEnvVars = [
+  'CLOUDINARY_CLOUD_NAME',
+  'CLOUDINARY_API_KEY',
+  'CLOUDINARY_API_SECRET'
+];
+
+const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+if (missingVars.length > 0) {
+  console.error('❌ Error: Missing required environment variables:');
+  missingVars.forEach(varName => console.error(`   - ${varName}`));
+  console.error('\nPlease set these in your .env file or environment.');
+  process.exit(1);
+}
+
+console.log('✓ Environment variables validated');
+
 const app = express();
 
 // Middleware
@@ -12,9 +29,47 @@ app.use(cors({ origin: config.CORS_ORIGIN }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Server is running' });
+// Comprehensive health check
+app.get('/api/health', async (req, res) => {
+  const cloudinary = require('cloudinary').v2;
+  const os = require('os');
+  
+  const checks = {
+    server: true,
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    memory: {
+      used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+      total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
+      free: Math.round(os.freemem() / 1024 / 1024)
+    },
+    cloudinary: false,
+    remotion: false
+  };
+
+  // Check Cloudinary connection
+  try {
+    await cloudinary.api.ping();
+    checks.cloudinary = true;
+  } catch (err) {
+    checks.cloudinaryError = err.message;
+  }
+
+  // Check if Remotion browser is available
+  try {
+    const fs = require('fs');
+    const remotionBrowserCache = process.env.REMOTION_BROWSER_EXECUTABLE_CACHE_DIR || '/app/.remotion-browser-cache';
+    checks.remotion = fs.existsSync(remotionBrowserCache);
+  } catch (err) {
+    checks.remotionError = err.message;
+  }
+
+  const healthy = checks.server && checks.cloudinary && checks.remotion;
+  
+  res.status(healthy ? 200 : 503).json({
+    status: healthy ? 'healthy' : 'degraded',
+    checks
+  });
 });
 
 // Routes

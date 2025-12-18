@@ -11,6 +11,9 @@ module.exports = {
   
   // Sync Settings
   SYNC_FILE_COUNT: process.env.SYNC_FILE_COUNT || 'all', // 'all' or number (e.g., '1', '2')
+  
+  // Video Quality (0-100, higher = better quality but slower rendering)
+  VIDEO_QUALITY: parseInt(process.env.VIDEO_QUALITY) || 95, // Default to 95 for high clarity
 
   // Paths
   VIDEO_STORAGE_PATH: './storage/videos',
