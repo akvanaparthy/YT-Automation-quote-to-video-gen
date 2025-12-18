@@ -38,13 +38,15 @@ async function syncVideos() {
 
     // Check if we should limit downloads
     const syncCount = config.SYNC_FILE_COUNT;
+    const totalVideos = videos.length;
+    
     if (syncCount !== 'all') {
       const count = parseInt(syncCount);
-      if (!isNaN(count) && count > 0 && count < videos.length) {
+      if (!isNaN(count) && count > 0 && count < totalVideos) {
         // Randomly select 'count' videos
         const shuffled = videos.sort(() => 0.5 - Math.random());
         videos = shuffled.slice(0, count);
-        console.log(`Randomly selected ${count} of ${videos.length} videos to download`);
+        console.log(`Randomly selected ${count} of ${totalVideos} videos to download`);
       }
     }
 
@@ -92,13 +94,15 @@ async function syncMusic() {
 
     // Check if we should limit downloads
     const syncCount = config.SYNC_FILE_COUNT;
+    const totalMusic = musicFiles.length;
+    
     if (syncCount !== 'all') {
       const count = parseInt(syncCount);
-      if (!isNaN(count) && count > 0 && count < musicFiles.length) {
+      if (!isNaN(count) && count > 0 && count < totalMusic) {
         // Randomly select 'count' music files
         const shuffled = musicFiles.sort(() => 0.5 - Math.random());
         musicFiles = shuffled.slice(0, count);
-        console.log(`Randomly selected ${count} of ${musicFiles.length} music files to download`);
+        console.log(`Randomly selected ${count} of ${totalMusic} music files to download`);
       }
     }
 

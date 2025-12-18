@@ -22,8 +22,29 @@ let cachedBundleLocation = null;
 async function getBundleLocation() {
   if (!cachedBundleLocation) {
     console.log('Creating Remotion bundle (first time only)...');
+    
+    // Ensure public directory exists before bundling
+    const publicDir = path.join(remotionDir, 'public');
+    const fsSync = require('fs');
+    if (!fsSync.existsSync(publicDir)) {
+      fsSync.mkdirSync(publicDir, { recursive: true });
+    }
+    
     cachedBundleLocation = await bundle({
       entryPoint: path.join(remotionDir, 'src/index.ts'),
+      // Configure webpack to copy public directory to bundle location
+      webpackOverride: (config) => {
+        return {
+          ...config,
+          resolve: {
+            ...config.resolve,
+            alias: {
+              ...config.resolve?.alias,
+              '@public': publicDir
+            }
+          }
+        };
+      },
       onProgress: ({ progress }) => {
         if (progress % 20 === 0) {
           console.log(`Bundling: ${(progress * 100).toFixed(0)}%`);
@@ -146,15 +167,19 @@ exports.processVideo = async (video, quote, subtitle, style, subtitleStyle, musi
     );
     console.log(`✓ Uploaded to Cloudinary: ${cloudinaryResult.secure_url}`);
 
-    // Clean up temporary files from public directory
-    try {
-      await fs.unlink(videoDestPath);
-      if (musicDestName) {
-        await fs.unlink(path.join(publicDir, musicDestName));
+    // Clean up temporary files from public directory after a delay
+    // (Give the bundle server time to finish serving if needed)
+    setTimeout(async () => {
+      try {
+        await fs.unlink(videoDestPath);
+        if (musicDestName) {
+          await fs.unlink(path.join(publicDir, musicDestName));
+        }
+        console.log('✓ Cleaned up public directory files');
+      } catch (cleanupErr) {
+        // Ignore cleanup errors (file might not exist)
       }
-    } catch (cleanupErr) {
-      console.error('Public directory cleanup error:', cleanupErr);
-    }
+    }, 5000); // Delay 5 seconds
 
     // Clean up local output file after upload
     try {
