@@ -115,10 +115,10 @@ export const QuoteVideo: React.FC<QuoteVideoProps> = ({
   return (
     <AbsoluteFill>
       {/* Background Video */}
-      <OffthreadVideo src={videoSrc} />
+      <OffthreadVideo src={staticFile(videoSrc)} />
 
       {/* Background Music */}
-      {musicSrc && <Audio src={musicSrc} volume={0.3} />}
+      {musicSrc && <Audio src={staticFile(musicSrc)} volume={0.3} />}
 
       {/* Text Overlay */}
       <AbsoluteFill

@@ -43,8 +43,7 @@ app.get('/api/health', async (req, res) => {
       total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
       free: Math.round(os.freemem() / 1024 / 1024)
     },
-    cloudinary: false,
-    remotion: false
+    cloudinary: false
   };
 
   // Check Cloudinary connection
@@ -55,16 +54,7 @@ app.get('/api/health', async (req, res) => {
     checks.cloudinaryError = err.message;
   }
 
-  // Check if Remotion browser is available
-  try {
-    const fs = require('fs');
-    const remotionBrowserCache = process.env.REMOTION_BROWSER_EXECUTABLE_CACHE_DIR || '/app/.remotion-browser-cache';
-    checks.remotion = fs.existsSync(remotionBrowserCache);
-  } catch (err) {
-    checks.remotionError = err.message;
-  }
-
-  const healthy = checks.server && checks.cloudinary && checks.remotion;
+  const healthy = checks.server && checks.cloudinary;
   
   res.status(healthy ? 200 : 503).json({
     status: healthy ? 'healthy' : 'degraded',

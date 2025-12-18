@@ -54,10 +54,24 @@ exports.processVideo = async (video, quote, subtitle, style, subtitleStyle, musi
     if (subtitle) console.log('Subtitle:', subtitle);
     console.log('Output path:', outputPath);
 
-    // Use original file paths directly (no copying needed)
-    // Remotion can access files from anywhere via absolute paths
-    const videoAbsolutePath = path.resolve(video.path);
-    const musicAbsolutePath = musicFile ? path.resolve(musicFile.path) : null;
+    // Create public directory in remotion if it doesn't exist
+    const publicDir = path.join(remotionDir, 'public');
+    if (!fsSync.existsSync(publicDir)) {
+      fsSync.mkdirSync(publicDir, { recursive: true });
+    }
+
+    // Copy video and music to remotion public directory
+    // (Required: Remotion's bundle server can only access files in public/)
+    const videoDestName = `video_${timestamp}.mp4`;
+    const videoDestPath = path.join(publicDir, videoDestName);
+    await fs.copyFile(video.path, videoDestPath);
+
+    let musicDestName = null;
+    if (musicFile) {
+      musicDestName = `music_${timestamp}.mp3`;
+      const musicDestPath = path.join(publicDir, musicDestName);
+      await fs.copyFile(musicFile.path, musicDestPath);
+    }
 
     // Get video duration
     const videoInfo = await getVideoInfo(video.path);
@@ -67,12 +81,12 @@ exports.processVideo = async (video, quote, subtitle, style, subtitleStyle, musi
 
     const durationInFrames = Math.floor(finalDuration * 30); // 30 fps
 
-    // Prepare input props with absolute paths
+    // Prepare input props with simple filenames (staticFile will look in public/)
     const inputProps = {
       quote,
       subtitle,
-      videoSrc: videoAbsolutePath,
-      musicSrc: musicAbsolutePath,
+      videoSrc: videoDestName,
+      musicSrc: musicDestName,
       style,
       subtitleStyle
     };
@@ -107,7 +121,7 @@ exports.processVideo = async (video, quote, subtitle, style, subtitleStyle, musi
       outputLocation: path.resolve(outputPath),
       inputProps,
       concurrency: optimalConcurrency,
-      quality: config.VIDEO_QUALITY, // Dynamic quality based on env var (default: 95 for high clarity)
+      jpegQuality: config.VIDEO_QUALITY, // Renamed from 'quality' (default: 95 for high clarity)
       pixelFormat: 'yuv420p', // Better compatibility
       frameRange: [0, durationInFrames - 1],
       everyNthFrame: 1,
@@ -131,6 +145,16 @@ exports.processVideo = async (video, quote, subtitle, style, subtitleStyle, musi
       outputFilename
     );
     console.log(`✓ Uploaded to Cloudinary: ${cloudinaryResult.secure_url}`);
+
+    // Clean up temporary files from public directory
+    try {
+      await fs.unlink(videoDestPath);
+      if (musicDestName) {
+        await fs.unlink(path.join(publicDir, musicDestName));
+      }
+    } catch (cleanupErr) {
+      console.error('Public directory cleanup error:', cleanupErr);
+    }
 
     // Clean up local output file after upload
     try {
